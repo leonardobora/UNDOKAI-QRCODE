@@ -45,13 +45,13 @@ def send_qr_email(participant, qr_image_data=None):
         msg = MIMEMultipart()
         msg['From'] = smtp_username
         msg['To'] = participant.email
-        msg['Subject'] = f'BUNDOKAI 2024 - Seu QR Code de Acesso'
+        msg['Subject'] = f'UNDOKAI 2024 - Seu QR Code de Acesso'
         
         # Email body
         body = f"""
         Olá {participant.nome},
         
-        Sua inscrição para o BUNDOKAI 2024 foi confirmada!
+        Sua inscrição para o UNDOKAI 2024 foi confirmada!
         
         QR Code de Acesso: {participant.qr_code}
         

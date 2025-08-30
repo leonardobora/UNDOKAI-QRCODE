@@ -295,6 +295,122 @@ def dashboard_stats():
         'recent_checkins': recent_checkins
     })
 
+@app.route('/api/add_item', methods=['POST'])
+def add_item():
+    """Add new inventory item"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['nome', 'categoria', 'estoque_inicial', 'estoque_atual']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'Campo {field} é obrigatório'})
+        
+        item = DeliveryItem(
+            nome=data['nome'].strip(),
+            categoria=data['categoria'].strip(),
+            descricao=data.get('descricao', '').strip(),
+            estoque_inicial=int(data['estoque_inicial']),
+            estoque_atual=int(data['estoque_atual']),
+            preco_unitario=float(data.get('preco_unitario', 0.0))
+        )
+        
+        db.session.add(item)
+        db.session.commit()
+        
+        app.logger.info(f'New item added: {item.nome} ({item.categoria})')
+        return jsonify({'success': True, 'message': 'Item adicionado com sucesso!'})
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Add item error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro interno do sistema'})
+
+@app.route('/api/item/<int:item_id>')
+def get_item(item_id):
+    """Get inventory item details"""
+    try:
+        item = DeliveryItem.query.get_or_404(item_id)
+        return jsonify({
+            'success': True,
+            'item': {
+                'id': item.id,
+                'nome': item.nome,
+                'categoria': item.categoria,
+                'descricao': item.descricao,
+                'estoque_inicial': item.estoque_inicial,
+                'estoque_atual': item.estoque_atual,
+                'preco_unitario': item.preco_unitario
+            }
+        })
+    except Exception as e:
+        app.logger.error(f'Get item error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Item não encontrado'})
+
+@app.route('/api/adjust_stock', methods=['POST'])
+def adjust_stock():
+    """Adjust inventory stock"""
+    try:
+        data = request.get_json()
+        item_id = int(data['stock_item_id'])
+        adjustment_type = data['adjustment_type']
+        adjustment_quantity = int(data['adjustment_quantity'])
+        
+        item = DeliveryItem.query.get_or_404(item_id)
+        
+        if adjustment_type == 'add':
+            item.estoque_atual += adjustment_quantity
+        elif adjustment_type == 'subtract':
+            item.estoque_atual = max(0, item.estoque_atual - adjustment_quantity)
+        elif adjustment_type == 'set':
+            item.estoque_atual = adjustment_quantity
+        
+        db.session.commit()
+        
+        app.logger.info(f'Stock adjusted for {item.nome}: {adjustment_type} {adjustment_quantity}')
+        return jsonify({'success': True, 'message': 'Estoque ajustado com sucesso!'})
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Stock adjustment error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao ajustar estoque'})
+
+@app.route('/api/download_excel_template')
+def download_excel_template():
+    """Download Excel template for inventory import"""
+    try:
+        # Create a simple CSV template
+        import io
+        output = io.StringIO()
+        
+        # CSV headers
+        headers = ['nome', 'categoria', 'descricao', 'estoque_inicial', 'estoque_atual', 'preco_unitario']
+        output.write(','.join(headers) + '\n')
+        
+        # Sample data
+        sample_data = [
+            ['Kit Festa Adulto', 'Festa', 'Kit completo para festa adulto', '100', '100', '50.00'],
+            ['Cesta Básica Completa', 'Cesta Básica', 'Cesta básica com itens essenciais', '200', '200', '80.00'],
+            ['Brinquedo Educativo', 'Brinquedos', 'Brinquedo educativo para crianças', '50', '50', '30.00'],
+            ['Kit Escolar Completo', 'Material Escolar', 'Kit com materiais escolares', '150', '150', '25.00']
+        ]
+        
+        for row in sample_data:
+            output.write(','.join(row) + '\n')
+        
+        output.seek(0)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = 'attachment; filename=template_estoque_undokai.csv'
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f'Excel template error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao gerar template'})
+
 @app.route('/health')
 def health():
     """Health check endpoint"""

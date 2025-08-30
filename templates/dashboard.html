@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Lightera BUNDOKAI{% endblock %}
+{% block title %}Dashboard - Lightera UNDOKAI{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -266,7 +266,7 @@
 
 <script>
 // Initialize charts with data
-const hourlyData = {{ hourly_stats | tojsonfilter }};
+const hourlyData = {{ hourly_stats | tojson }};
 const statsData = {
     total_participants: {{ stats.total_participants }},
     total_checkins: {{ stats.total_checkins }},

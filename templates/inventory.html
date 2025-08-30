@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Gerenciar Estoque - Lightera BUNDOKAI{% endblock %}
+{% block title %}Gerenciar Estoque - Lightera UNDOKAI{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -9,7 +9,10 @@
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addItemModal">
             <i class="fas fa-plus"></i> Novo Item
         </button>
-        <button class="btn btn-primary" onclick="importFromExcel()">
+        <button class="btn btn-primary" onclick="downloadTemplate()">
+            <i class="fas fa-download"></i> Baixar Template
+        </button>
+        <button class="btn btn-info" onclick="importFromExcel()">
             <i class="fas fa-file-excel"></i> Importar Excel
         </button>
         <button class="btn btn-outline-primary" onclick="exportToExcel()">
@@ -499,11 +502,21 @@ function deleteItem(itemId) {
     }
 }
 
+function downloadTemplate() {
+    // Download Excel template for manual entry
+    window.location.href = '/api/download_excel_template';
+}
+
+function exportToExcel() {
+    // Export current inventory to Excel
+    window.location.href = '/api/export_inventory';
+}
+
 function importFromExcel() {
     // Create file input dynamically
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.xlsx,.xls';
+    input.accept = '.xlsx,.xls,.csv';
     input.onchange = function(e) {
         const file = e.target.files[0];
         if (file) {
