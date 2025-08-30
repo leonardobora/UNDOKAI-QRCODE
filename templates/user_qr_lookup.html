@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar Meu QR Code - Lightera UNDOKAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-search"></i> Buscar Meu QR Code</h4>
+                <p class="mb-0">Digite seu email para encontrar seu QR Code de acesso</p>
+            </div>
+            <div class="card-body">
+                
+                <!-- Email Search Section -->
+                <div class="mb-4">
+                    <div class="input-group">
+                        <input type="email" class="form-control form-control-lg" id="emailInput" 
+                               placeholder="Digite seu email..." 
+                               autocomplete="email">
+                        <button class="btn btn-primary" type="button" onclick="searchByEmail()">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        Digite o email usado na inscrição para encontrar seu QR Code
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="searchResults" class="d-none">
+                    <div class="alert alert-success">
+                        <h6>QR Code Encontrado!</h6>
+                        <div id="participantInfo"></div>
+                    </div>
+                </div>
+
+                <!-- No Results -->
+                <div id="noResults" class="d-none">
+                    <div class="alert alert-warning">
+                        <h6>Inscrição não encontrada</h6>
+                        <p class="mb-0">Não encontramos uma inscrição com este email. Verifique se digitou corretamente ou faça uma nova inscrição.</p>
+                        <a href="{{ url_for('register') }}" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-user-plus"></i> Fazer Nova Inscrição
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loadingSpinner" class="d-none text-center">
+                    <div class="loading-spinner"></div>
+                    <p class="mt-2">Buscando...</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="text-center mt-3">
+            <a href="{{ url_for('user_index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Início
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function searchByEmail() {
+    const email = document.getElementById('emailInput').value.trim();
+    
+    if (!email) {
+        alert('Por favor, digite seu email.');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingSpinner').classList.remove('d-none');
+    document.getElementById('searchResults').classList.add('d-none');
+    document.getElementById('noResults').classList.add('d-none');
+    
+    fetch('/api/lookup_participant_by_email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('loadingSpinner').classList.add('d-none');
+        
+        if (data.success && data.participant) {
+            const participant = data.participant;
+            const infoDiv = document.getElementById('participantInfo');
+            
+            infoDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Nome:</strong> ${participant.nome}<br>
+                        <strong>Email:</strong> ${participant.email}<br>
+                        <strong>QR Code:</strong> <code>${participant.qr_code}</code>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <img src="${data.qr_image}" alt="QR Code" class="img-fluid" style="max-width: 150px;">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success btn-sm" onclick="downloadQR('${participant.qr_code}', '${data.qr_image}')">
+                        <i class="fas fa-download"></i> Baixar QR Code
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="shareQR('${participant.nome}', '${participant.qr_code}')">
+                        <i class="fas fa-share"></i> Compartilhar
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('searchResults').classList.remove('d-none');
+        } else {
+            document.getElementById('noResults').classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        document.getElementById('loadingSpinner').classList.add('d-none');
+        console.error('Error:', error);
+        alert('Erro ao buscar dados. Tente novamente.');
+    });
+}
+
+function downloadQR(qrCode, qrImage) {
+    const link = document.createElement('a');
+    link.href = qrImage;
+    link.download = `undokai-qr-${qrCode}.png`;
+    link.click();
+}
+
+function shareQR(nome, qrCode) {
+    if (navigator.share) {
+        navigator.share({
+            title: 'UNDOKAI 2025 - QR Code',
+            text: `QR Code do ${nome} para o evento UNDOKAI: ${qrCode}`,
+            url: window.location.href
+        });
+    } else {
+        const text = `UNDOKAI 2025 - QR Code: ${qrCode}`;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('QR Code copiado para a área de transferência!');
+        });
+    }
+}
+
+// Allow search on Enter key
+document.getElementById('emailInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchByEmail();
+    }
+});
+</script>
+{% endblock %}

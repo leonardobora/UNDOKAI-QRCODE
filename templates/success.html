@@ -12,7 +12,7 @@
             <div class="card-body text-center">
                 <div class="alert alert-success">
                     <h5>Parabéns, {{ participant.nome }}!</h5>
-                    <p class="mb-0">Sua inscrição para o UNDOKAI 2024 foi realizada com sucesso.</p>
+                    <p class="mb-0">Sua inscrição para o UNDOKAI 2025 foi realizada com sucesso.</p>
                 </div>
 
                 <!-- QR Code Display -->
@@ -153,13 +153,13 @@ function downloadQR() {
 function shareQR() {
     if (navigator.share) {
         navigator.share({
-            title: 'UNDOKAI 2024 - QR Code',
+            title: 'UNDOKAI 2025 - QR Code',
             text: 'Meu QR Code para o evento UNDOKAI: {{ participant.qr_code }}',
             url: window.location.href
         });
     } else {
         // Fallback: copy to clipboard
-        const text = `UNDOKAI 2024 - QR Code: {{ participant.qr_code }}\nLink: ${window.location.href}`;
+        const text = `UNDOKAI 2025 - QR Code: {{ participant.qr_code }}\nLink: ${window.location.href}`;
         navigator.clipboard.writeText(text).then(() => {
             alert('Informações copiadas para a área de transferência!');
         });
@@ -183,7 +183,7 @@ function printQR() {
             </head>
             <body>
                 <div class="header">
-                    <h1>Lightera UNDOKAI 2024</h1>
+                    <h1>Lightera UNDOKAI 2025</h1>
                     <h2>QR Code de Acesso</h2>
                 </div>
                 <div class="qr-code">

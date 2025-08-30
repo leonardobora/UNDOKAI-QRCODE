@@ -9,8 +9,19 @@ from models import Participant, Dependent, CheckIn, DeliveryItem, DeliveryLog, E
 from utils import generate_qr_code, send_qr_email
 
 @app.route('/')
-def index():
-    """Homepage with overview"""
+def user_index():
+    """User homepage with registration and QR lookup"""
+    total_participants = Participant.query.count()
+    total_checkins = CheckIn.query.count()
+    
+    return render_template('user_index.html', stats={
+        'total_participants': total_participants,
+        'total_checkins': total_checkins
+    })
+
+@app.route('/admin')
+def admin_index():
+    """Admin homepage with full system overview"""
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     total_items = DeliveryItem.query.count()
@@ -22,6 +33,50 @@ def index():
         'total_items': total_items,
         'pending_checkins': pending_checkins
     })
+
+@app.route('/index')
+def index():
+    """Redirect old index route to user interface"""
+    return redirect(url_for('user_index'))
+
+@app.route('/user/qr-lookup')
+def user_qr_lookup():
+    """User QR code lookup page"""
+    return render_template('user_qr_lookup.html')
+
+@app.route('/api/lookup_participant_by_email', methods=['POST'])
+def lookup_participant_by_email():
+    """API endpoint to lookup participant by email"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'success': False, 'message': 'Email é obrigatório'})
+        
+        participant = Participant.query.filter_by(email=email).first()
+        
+        if not participant:
+            return jsonify({'success': False, 'message': 'Participante não encontrado'})
+        
+        # Generate QR code image
+        from utils import generate_qr_code
+        qr_image = generate_qr_code(participant.qr_code)
+        
+        return jsonify({
+            'success': True,
+            'participant': {
+                'nome': participant.nome,
+                'email': participant.email,
+                'qr_code': participant.qr_code,
+                'dependents_count': len(participant.dependents)
+            },
+            'qr_image': qr_image
+        })
+        
+    except Exception as e:
+        app.logger.error(f'Lookup participant error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro interno do sistema'})
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

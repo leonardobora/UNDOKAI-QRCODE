@@ -1,4 +1,4 @@
-/* Lightera BUNDOKAI Custom Styles */
+/* Lightera UNDOKAI Custom Styles */
 
 :root {
     --lightera-purple: #6f42c1;
@@ -242,6 +242,25 @@ body {
     font-weight: 500;
     padding: 0.5rem 1rem;
     transition: all 0.2s ease;
+}
+
+.btn-light {
+    color: #212529 !important;
+    background-color: #f8f9fa !important;
+    border-color: #f8f9fa !important;
+}
+
+.btn-light:hover,
+.btn-light:focus,
+.btn-light:active {
+    color: #000 !important;
+    background-color: #e9ecef !important;
+    border-color: #e9ecef !important;
+}
+
+.btn-light .fas,
+.btn-light small {
+    color: #212529 !important;
 }
 
 .btn:hover {

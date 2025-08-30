@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Lightera UNDOKAI - Inscrições{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-gradient text-white p-5 rounded mb-4" style="background: linear-gradient(135deg, #6f42c1, #5a359a);">
+            <h1 class="display-4 text-center"><i class="fas fa-qrcode"></i> Lightera UNDOKAI 2025</h1>
+            <p class="lead text-center">Sistema de Inscrições para Eventos Corporativos</p>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+            <p class="text-center">Faça sua inscrição e receba seu QR Code de acesso</p>
+            
+            <div class="row mt-4 justify-content-center">
+                <div class="col-md-4">
+                    <a class="btn btn-light btn-lg w-100 text-dark" href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus text-dark fa-2x"></i><br>
+                        <strong class="text-dark">Fazer Inscrição</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a class="btn btn-outline-light btn-lg w-100" href="{{ url_for('user_qr_lookup') }}">
+                        <i class="fas fa-search fa-2x"></i><br>
+                        <strong>Buscar Meu QR Code</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simple Statistics Cards for Users -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h4>{{ stats.total_participants }}</h4>
+                <p class="card-text">Participantes Inscritos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4>{{ stats.total_checkins }}</h4>
+                <p class="card-text">Check-ins Realizados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instructions for Users -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Como Participar</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <i class="fas fa-edit fa-3x text-primary mb-3"></i>
+                        <h6>1. Faça sua Inscrição</h6>
+                        <p class="text-muted">Clique em "Fazer Inscrição" e preencha seus dados</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <i class="fas fa-envelope fa-3x text-success mb-3"></i>
+                        <h6>2. Receba seu QR Code</h6>
+                        <p class="text-muted">Você receberá um email com seu QR Code de acesso</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <i class="fas fa-qrcode fa-3x text-warning mb-3"></i>
+                        <h6>3. Apresente no Evento</h6>
+                        <p class="text-muted">Use seu QR Code para fazer check-in no evento</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Link to Admin Interface -->
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('admin_index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-cog"></i> Acesso Administrativo
+        </a>
+    </div>
+</div>
+{% endblock %}
