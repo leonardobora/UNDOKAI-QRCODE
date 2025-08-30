@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner QR - Lightera BUNDOKAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    #qr-reader {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .scanner-container {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .result-container {
+        min-height: 100px;
+    }
+    
+    .success-animation {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-camera"></i> Scanner QR Code - Check-in</h4>
+            </div>
+            <div class="card-body">
+                
+                <!-- Scanner Section -->
+                <div class="scanner-container text-center">
+                    <h5>Posicione o QR Code na frente da câmera</h5>
+                    <div id="qr-reader"></div>
+                    
+                    <div class="mt-3">
+                        <button id="start-scan" class="btn btn-success me-2">
+                            <i class="fas fa-play"></i> Iniciar Scanner
+                        </button>
+                        <button id="stop-scan" class="btn btn-danger me-2" style="display: none;">
+                            <i class="fas fa-stop"></i> Parar Scanner
+                        </button>
+                        <button id="switch-camera" class="btn btn-info" style="display: none;">
+                            <i class="fas fa-sync"></i> Trocar Câmera
+                        </button>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Dica:</strong> Mantenha o QR Code estável e bem iluminado para melhor leitura.
+                    </div>
+                </div>
+
+                <!-- Manual Input -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mx-auto">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-keyboard"></i> Entrada Manual (Opcional)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="manual-qr" placeholder="Digite o código QR">
+                                    <button class="btn btn-outline-primary" type="button" onclick="validateManualQR()">
+                                        <i class="fas fa-check"></i> Validar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="result-container" class="result-container">
+                    <div id="scan-result" style="display: none;">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white text-center">
+                            <div class="card-body">
+                                <h5 id="scans-today">0</h5>
+                                <small>Scans Hoje</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white text-center">
+                            <div class="card-body">
+                                <h5 id="successful-checkins">0</h5>
+                                <small>Check-ins Válidos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white text-center">
+                            <div class="card-body">
+                                <h5 id="failed-scans">0</h5>
+                                <small>Códigos Inválidos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-secondary text-white text-center">
+                            <div class="card-body">
+                                <h5 id="duplicate-attempts">0</h5>
+                                <small>Tentativas Duplicadas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Scans -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-history"></i> Últimos Scans</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="recent-scans" class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Horário</th>
+                                        <th>Participante</th>
+                                        <th>Código</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-scans-tbody">
+                                    <!-- Recent scans will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Check-in Realizado!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="success-content">
+                    <!-- Success content will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Continuar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-circle"></i> Erro no Check-in</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="error-content">
+                    <!-- Error content will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="tryAgain()">Tentar Novamente</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- HTML5-QRCode Library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+{% endblock %}

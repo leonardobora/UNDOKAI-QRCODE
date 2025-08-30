@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar Participante - Lightera BUNDOKAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4><i class="fas fa-search"></i> Buscar Participante - Check-in Manual</h4>
+                <p class="mb-0">Use esta função quando o scanner QR não estiver disponível</p>
+            </div>
+            <div class="card-body">
+                
+                <!-- Search Section -->
+                <div class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-lg" id="searchInput" 
+                               placeholder="Digite o nome do participante..." 
+                               autocomplete="off">
+                        <button class="btn btn-warning" type="button" onclick="clearSearch()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        Digite pelo menos 2 caracteres para iniciar a busca
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="search-results" style="display: none;">
+                    <h6>Resultados da Busca:</h6>
+                    <div id="results-list" class="list-group">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+
+                <!-- No Results -->
+                <div id="no-results" style="display: none;">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Nenhum participante encontrado com este nome.
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="search-loading" style="display: none;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Buscando...</span>
+                        </div>
+                        <p class="mt-2">Buscando participantes...</p>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="alert alert-info mt-4">
+                    <h6><i class="fas fa-info-circle"></i> Como Usar:</h6>
+                    <ol class="mb-0">
+                        <li>Digite o nome do participante no campo de busca</li>
+                        <li>Selecione o participante correto na lista</li>
+                        <li>Confirme o check-in manual</li>
+                        <li>O participante receberá confirmação</li>
+                    </ol>
+                </div>
+
+                <!-- Offline Mode Info -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-wifi-slash"></i> Modo Offline</h6>
+                    </div>
+                    <div class="card-body">
+                        <p>Esta funcionalidade funciona mesmo sem conexão com a internet:</p>
+                        <ul class="mb-0">
+                            <li>Os dados são armazenados localmente no dispositivo</li>
+                            <li>Check-ins são sincronizados quando a conexão for restaurada</li>
+                            <li>Ideal para locais com sinal instável</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Recent Manual Check-ins -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-history"></i> Check-ins Manuais Recentes</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="recent-manual-checkins">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Horário</th>
+                                            <th>Participante</th>
+                                            <th>Departamento</th>
+                                            <th>Dependentes</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="manual-checkins-tbody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">
+                                                Nenhum check-in manual realizado ainda
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-user-check"></i> Confirmar Check-in</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="participant-details">
+                    <!-- Participant details will be populated here -->
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atenção:</strong> Confirme se os dados estão corretos antes de prosseguir.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirm-checkin">
+                    <i class="fas fa-check"></i> Confirmar Check-in
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Check-in Realizado!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="success-details">
+                    <!-- Success details will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Continuar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Inscrição Confirmada - Lightera BUNDOKAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white text-center">
+                <h4><i class="fas fa-check-circle"></i> Inscrição Confirmada!</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="alert alert-success">
+                    <h5>Parabéns, {{ participant.nome }}!</h5>
+                    <p class="mb-0">Sua inscrição para o BUNDOKAI 2024 foi realizada com sucesso.</p>
+                </div>
+
+                <!-- QR Code Display -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-qrcode"></i> Seu QR Code de Acesso</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="qr-code-container mb-3">
+                            <img src="{{ qr_image }}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                        </div>
+                        <h4 class="text-primary">{{ participant.qr_code }}</h4>
+                        <p class="text-muted">Guarde este código com cuidado!</p>
+                    </div>
+                </div>
+
+                <!-- Participant Details -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-info-circle"></i> Detalhes da Inscrição</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-start">
+                            <div class="col-md-6">
+                                <strong>Nome:</strong><br>
+                                {{ participant.nome }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Email:</strong><br>
+                                {{ participant.email }}
+                            </div>
+                            {% if participant.telefone %}
+                            <div class="col-md-6 mt-2">
+                                <strong>Telefone:</strong><br>
+                                {{ participant.telefone }}
+                            </div>
+                            {% endif %}
+                            {% if participant.departamento %}
+                            <div class="col-md-6 mt-2">
+                                <strong>Departamento:</strong><br>
+                                {{ participant.departamento }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if participant.dependents %}
+                        <div class="mt-3">
+                            <strong>Dependentes ({{ participant.dependents|length }}):</strong>
+                            <ul class="list-unstyled mt-2">
+                                {% for dependent in participant.dependents %}
+                                <li><i class="fas fa-user"></i> {{ dependent.nome }} 
+                                    {% if dependent.idade %}({{ dependent.idade }} anos){% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="alert alert-info text-start">
+                    <h6><i class="fas fa-lightbulb"></i> Próximos Passos:</h6>
+                    <ol>
+                        <li><strong>Guarde seu QR Code:</strong> Salve esta imagem ou anote o código {{ participant.qr_code }}</li>
+                        <li><strong>Aguarde o email:</strong> Você receberá um email com o QR Code em até 24 horas</li>
+                        <li><strong>No dia do evento:</strong> Apresente o QR Code na entrada para fazer check-in</li>
+                        <li><strong>Retirada de itens:</strong> Use o mesmo QR Code para retirar presentes e kits</li>
+                    </ol>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <button class="btn btn-primary w-100" onclick="downloadQR()">
+                            <i class="fas fa-download"></i> Baixar QR Code
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-success w-100" onclick="shareQR()">
+                            <i class="fas fa-share"></i> Compartilhar
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-info w-100" onclick="printQR()">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-home"></i> Voltar ao Início
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-plus"></i> Nova Inscrição
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Reminder Modal -->
+<div class="modal fade" id="emailReminderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-envelope"></i> Lembrete por Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Um email com seu QR Code será enviado para:</p>
+                <p class="text-primary"><strong>{{ participant.email }}</strong></p>
+                <p class="text-muted">Caso não receba o email em 24 horas, verifique sua caixa de spam ou entre em contato conosco.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="requestEmailResend()">
+                    <i class="fas fa-paper-plane"></i> Reenviar Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function downloadQR() {
+    const qrImage = document.querySelector('.qr-code-container img');
+    const link = document.createElement('a');
+    link.href = qrImage.src;
+    link.download = 'bundokai-qr-{{ participant.qr_code }}.png';
+    link.click();
+}
+
+function shareQR() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'BUNDOKAI 2024 - QR Code',
+            text: 'Meu QR Code para o evento BUNDOKAI: {{ participant.qr_code }}',
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        const text = `BUNDOKAI 2024 - QR Code: {{ participant.qr_code }}\nLink: ${window.location.href}`;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Informações copiadas para a área de transferência!');
+        });
+    }
+}
+
+function printQR() {
+    const printWindow = window.open('', '_blank');
+    const qrImage = document.querySelector('.qr-code-container img');
+    
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>QR Code - {{ participant.nome }}</title>
+                <style>
+                    body { text-align: center; font-family: Arial, sans-serif; margin: 20px; }
+                    .header { color: #6f42c1; margin-bottom: 20px; }
+                    .qr-code { margin: 20px 0; }
+                    .details { margin-top: 20px; font-size: 14px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Lightera BUNDOKAI 2024</h1>
+                    <h2>QR Code de Acesso</h2>
+                </div>
+                <div class="qr-code">
+                    <img src="${qrImage.src}" alt="QR Code" style="max-width: 300px;">
+                </div>
+                <div class="details">
+                    <p><strong>Nome:</strong> {{ participant.nome }}</p>
+                    <p><strong>Código:</strong> {{ participant.qr_code }}</p>
+                    <p><strong>Dependentes:</strong> {{ participant.dependents|length }}</p>
+                    <p><strong>Data de Inscrição:</strong> {{ participant.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+            </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function requestEmailResend() {
+    // In a real implementation, this would make an API call
+    alert('Solicitação de reenvio registrada. Você receberá o email em breve.');
+    document.querySelector('[data-bs-dismiss="modal"]').click();
+}
+
+// Show email reminder modal after 3 seconds
+setTimeout(() => {
+    const modal = new bootstrap.Modal(document.getElementById('emailReminderModal'));
+    modal.show();
+}, 3000);
+</script>
+{% endblock %}

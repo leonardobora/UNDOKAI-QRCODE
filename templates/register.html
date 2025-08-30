@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Inscrição - Lightera BUNDOKAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-user-plus"></i> Inscrição BUNDOKAI 2024</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="registrationForm">
+                    <!-- Participant Information -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-user"></i> Dados do Participante</h5>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nome" class="form-label">Nome Completo *</label>
+                                    <input type="text" class="form-control" id="nome" name="nome" required maxlength="100">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required maxlength="120">
+                                    <div class="form-text">Será usado para envio do QR Code</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="telefone" class="form-label">Telefone</label>
+                                    <input type="tel" class="form-control" id="telefone" name="telefone" maxlength="20">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="departamento" class="form-label">Departamento</label>
+                                    <select class="form-select" id="departamento" name="departamento">
+                                        <option value="">Selecione...</option>
+                                        <option value="TI">Tecnologia da Informação</option>
+                                        <option value="RH">Recursos Humanos</option>
+                                        <option value="Vendas">Vendas</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Financeiro">Financeiro</option>
+                                        <option value="Operações">Operações</option>
+                                        <option value="Qualidade">Qualidade</option>
+                                        <option value="Engenharia">Engenharia</option>
+                                        <option value="Logística">Logística</option>
+                                        <option value="Diretoria">Diretoria</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dependents Section -->
+                    <div class="mb-4">
+                        <h5 class="text-success"><i class="fas fa-users"></i> Dependentes</h5>
+                        <hr>
+                        <p class="text-muted small">Adicione até 5 dependentes que participarão do evento</p>
+                        
+                        <div id="dependentsContainer">
+                            {% for i in range(1, 6) %}
+                            <div class="row mb-3 dependent-row" id="dependent-{{ i }}">
+                                <div class="col-md-6">
+                                    <label for="dependent_{{ i }}" class="form-label">Nome do Dependente {{ i }}</label>
+                                    <input type="text" class="form-control dependent-name" id="dependent_{{ i }}" name="dependent_{{ i }}" maxlength="100">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="dependent_age_{{ i }}" class="form-label">Idade</label>
+                                    <input type="number" class="form-control" id="dependent_age_{{ i }}" name="dependent_age_{{ i }}" min="0" max="120">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm clear-dependent" data-target="{{ i }}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Informação:</strong> Um único QR Code será gerado para você e todos os seus dependentes.
+                        </div>
+                    </div>
+
+                    <!-- LGPD Consent -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="lgpdConsent" required>
+                            <label class="form-check-label" for="lgpdConsent">
+                                <strong>Aceito os termos de uso e política de privacidade *</strong>
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            Seus dados serão utilizados exclusivamente para este evento e não serão compartilhados com terceiros.
+                            Você pode solicitar a exclusão dos seus dados a qualquer momento.
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-check"></i> Confirmar Inscrição
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear dependent fields
+    document.querySelectorAll('.clear-dependent').forEach(button => {
+        button.addEventListener('click', function() {
+            const target = this.dataset.target;
+            document.getElementById(`dependent_${target}`).value = '';
+            document.getElementById(`dependent_age_${target}`).value = '';
+        });
+    });
+
+    // Form validation
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        const nome = document.getElementById('nome').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const lgpdConsent = document.getElementById('lgpdConsent').checked;
+
+        if (!nome || !email || !lgpdConsent) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios e aceite os termos de uso.');
+            return;
+        }
+
+        // Count dependents
+        let dependentCount = 0;
+        document.querySelectorAll('.dependent-name').forEach(input => {
+            if (input.value.trim()) dependentCount++;
+        });
+
+        if (dependentCount > 5) {
+            e.preventDefault();
+            alert('Máximo de 5 dependentes permitidos.');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+        submitBtn.disabled = true;
+    });
+
+    // Auto-enable dependent age field when name is filled
+    document.querySelectorAll('.dependent-name').forEach(input => {
+        input.addEventListener('input', function() {
+            const index = this.id.split('_')[1];
+            const ageField = document.getElementById(`dependent_age_${index}`);
+            
+            if (this.value.trim()) {
+                ageField.removeAttribute('disabled');
+            } else {
+                ageField.value = '';
+                ageField.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+
+    // Initialize disabled state for age fields
+    document.querySelectorAll('.dependent-name').forEach(input => {
+        const index = input.id.split('_')[1];
+        const ageField = document.getElementById(`dependent_age_${index}`);
+        if (!input.value.trim()) {
+            ageField.setAttribute('disabled', 'disabled');
+        }
+    });
+});
+</script>
+{% endblock %}

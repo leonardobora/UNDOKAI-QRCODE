@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Controle de Entregas - Lightera BUNDOKAI{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-truck"></i> Controle de Entregas</h2>
+    <div>
+        <button class="btn btn-primary" onclick="refreshInventory()">
+            <i class="fas fa-sync"></i> Atualizar
+        </button>
+        <a href="{{ url_for('inventory') }}" class="btn btn-outline-primary">
+            <i class="fas fa-warehouse"></i> Gerenciar Estoque
+        </a>
+    </div>
+</div>
+
+<!-- Categories Tabs -->
+<ul class="nav nav-tabs mb-4" id="categoryTabs" role="tablist">
+    {% for category in items_by_category.keys() %}
+    <li class="nav-item" role="presentation">
+        <button class="nav-link {% if loop.first %}active{% endif %}" 
+                id="{{ category|replace(' ', '-')|lower }}-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#{{ category|replace(' ', '-')|lower }}" 
+                type="button" role="tab">
+            {% if category == 'Festa' %}
+                <i class="fas fa-birthday-cake"></i>
+            {% elif category == 'Cesta Básica' %}
+                <i class="fas fa-shopping-basket"></i>
+            {% elif category == 'Brinquedos' %}
+                <i class="fas fa-gamepad"></i>
+            {% elif category == 'Material Escolar' %}
+                <i class="fas fa-graduation-cap"></i>
+            {% endif %}
+            {{ category }}
+            <span class="badge bg-secondary ms-1">{{ items_by_category[category]|length }}</span>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="categoryTabsContent">
+    {% for category, items in items_by_category.items() %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+         id="{{ category|replace(' ', '-')|lower }}" 
+         role="tabpanel">
+         
+        <!-- Category Summary -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ items|length }}</h5>
+                        <small>Items Disponíveis</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ items|sum(attribute='estoque_inicial') }}</h5>
+                        <small>Estoque Inicial</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ items|sum(attribute='estoque_atual') }}</h5>
+                        <small>Estoque Atual</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ items|sum(attribute='estoque_inicial') - items|sum(attribute='estoque_atual') }}</h5>
+                        <small>Items Entregues</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Items Grid -->
+        <div class="row">
+            {% for item in items %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">{{ item.nome }}</h6>
+                        {% if item.estoque_atual <= 10 %}
+                            <span class="badge bg-danger">Baixo Estoque</span>
+                        {% elif item.estoque_atual <= 50 %}
+                            <span class="badge bg-warning">Atenção</span>
+                        {% else %}
+                            <span class="badge bg-success">OK</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h4 class="text-primary">{{ item.estoque_atual }}</h4>
+                                <small class="text-muted">Disponível</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success">{{ item.items_delivered }}</h4>
+                                <small class="text-muted">Entregues</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="mt-3">
+                            {% set percentage = (item.items_delivered / item.estoque_inicial * 100) if item.estoque_inicial > 0 else 0 %}
+                            <div class="progress">
+                                <div class="progress-bar bg-success" 
+                                     style="width: {{ percentage }}%"
+                                     aria-valuenow="{{ percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ "%.1f"|format(percentage) }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ item.items_delivered }} de {{ item.estoque_inicial }}</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm" 
+                                    onclick="openDeliveryModal({{ item.id }}, '{{ item.nome }}')">
+                                <i class="fas fa-truck"></i> Registrar Entrega
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" 
+                                    onclick="viewDeliveryHistory({{ item.id }})">
+                                <i class="fas fa-history"></i> Ver Histórico
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not items %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    Nenhum item cadastrado para esta categoria.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Delivery Modal -->
+<div class="modal fade" id="deliveryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-truck"></i> Registrar Entrega</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="deliveryForm">
+                    <input type="hidden" id="item_id" name="item_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Item:</label>
+                        <div class="form-control-plaintext fw-bold" id="item_name"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="participant_qr" class="form-label">QR Code do Participante *</label>
+                        <input type="text" class="form-control" id="participant_qr" name="participant_qr" required>
+                        <div class="form-text">Digite ou escaneie o QR Code</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantidade *</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="operator" class="form-label">Responsável pela Entrega</label>
+                        <input type="text" class="form-control" id="operator" name="operator" 
+                               placeholder="Nome do operador">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" 
+                                  placeholder="Observações adicionais (opcional)"></textarea>
+                    </div>
+                    
+                    <div id="participant_info" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6>Participante Encontrado:</h6>
+                            <div id="participant_details"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="validateParticipant()">
+                    <i class="fas fa-search"></i> Validar Participante
+                </button>
+                <button type="button" class="btn btn-success" id="confirm-delivery" style="display: none;" onclick="confirmDelivery()">
+                    <i class="fas fa-check"></i> Confirmar Entrega
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-history"></i> Histórico de Entregas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="delivery-history">
+                    <!-- History content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentItemId = null;
+
+function openDeliveryModal(itemId, itemName) {
+    currentItemId = itemId;
+    document.getElementById('item_id').value = itemId;
+    document.getElementById('item_name').textContent = itemName;
+    document.getElementById('deliveryForm').reset();
+    document.getElementById('participant_info').style.display = 'none';
+    document.getElementById('confirm-delivery').style.display = 'none';
+    
+    const modal = new bootstrap.Modal(document.getElementById('deliveryModal'));
+    modal.show();
+}
+
+function validateParticipant() {
+    const qrCode = document.getElementById('participant_qr').value.trim();
+    
+    if (!qrCode) {
+        alert('Por favor, digite o QR Code do participante.');
+        return;
+    }
+    
+    // Simulate API call to validate participant
+    // In a real implementation, this would be an AJAX call
+    fetch('/api/validate_participant', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_code: qrCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('participant_details').innerHTML = `
+                <strong>Nome:</strong> ${data.participant.nome}<br>
+                <strong>Email:</strong> ${data.participant.email}<br>
+                <strong>Departamento:</strong> ${data.participant.departamento || 'N/A'}<br>
+                <strong>Dependentes:</strong> ${data.participant.dependents_count}
+            `;
+            document.getElementById('participant_info').style.display = 'block';
+            document.getElementById('confirm-delivery').style.display = 'inline-block';
+        } else {
+            alert('Participante não encontrado: ' + data.message);
+            document.getElementById('participant_info').style.display = 'none';
+            document.getElementById('confirm-delivery').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao validar participante. Tente novamente.');
+    });
+}
+
+function confirmDelivery() {
+    const formData = new FormData(document.getElementById('deliveryForm'));
+    const deliveryData = Object.fromEntries(formData);
+    
+    fetch('/api/register_delivery', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(deliveryData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Entrega registrada com sucesso!');
+            bootstrap.Modal.getInstance(document.getElementById('deliveryModal')).hide();
+            location.reload(); // Refresh to update inventory
+        } else {
+            alert('Erro ao registrar entrega: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao registrar entrega. Tente novamente.');
+    });
+}
+
+function viewDeliveryHistory(itemId) {
+    fetch(`/api/delivery_history/${itemId}`)
+        .then(response => response.json())
+        .then(data => {
+            let historyHtml = '<div class="table-responsive">';
+            historyHtml += '<table class="table table-striped">';
+            historyHtml += '<thead><tr><th>Data/Hora</th><th>Participante</th><th>Quantidade</th><th>Operador</th><th>Status</th></tr></thead>';
+            historyHtml += '<tbody>';
+            
+            if (data.deliveries && data.deliveries.length > 0) {
+                data.deliveries.forEach(delivery => {
+                    historyHtml += `
+                        <tr>
+                            <td>${delivery.delivery_time}</td>
+                            <td>${delivery.participant_name}</td>
+                            <td>${delivery.quantidade}</td>
+                            <td>${delivery.operator || 'N/A'}</td>
+                            <td><span class="badge bg-success">${delivery.status}</span></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                historyHtml += '<tr><td colspan="5" class="text-center">Nenhuma entrega registrada</td></tr>';
+            }
+            
+            historyHtml += '</tbody></table></div>';
+            document.getElementById('delivery-history').innerHTML = historyHtml;
+            
+            const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao carregar histórico.');
+        });
+}
+
+function refreshInventory() {
+    location.reload();
+}
+</script>
+{% endblock %}

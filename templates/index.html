@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Lightera BUNDOKAI - Sistema de Check-in{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-gradient text-white p-5 rounded mb-4" style="background: linear-gradient(135deg, #6f42c1, #5a359a);">
+            <h1 class="display-4"><i class="fas fa-qrcode"></i> Lightera BUNDOKAI</h1>
+            <p class="lead">Sistema de Check-in e Controle de Entregas para Eventos Corporativos</p>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+            <p>Substitui solução Digitevent com economia de R$ 5.427,00 por evento</p>
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <a class="btn btn-light btn-lg w-100" href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus"></i><br>
+                        <small>Fazer Inscrição</small>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a class="btn btn-outline-light btn-lg w-100" href="{{ url_for('scanner') }}">
+                        <i class="fas fa-camera"></i><br>
+                        <small>Scanner QR</small>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a class="btn btn-outline-light btn-lg w-100" href="{{ url_for('checkin_search') }}">
+                        <i class="fas fa-search"></i><br>
+                        <small>Buscar Nome</small>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a class="btn btn-outline-light btn-lg w-100" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-chart-bar"></i><br>
+                        <small>Dashboard</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h4>{{ stats.total_participants }}</h4>
+                <p class="card-text">Participantes Inscritos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4>{{ stats.total_checkins }}</h4>
+                <p class="card-text">Check-ins Realizados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4>{{ stats.pending_checkins }}</h4>
+                <p class="card-text">Aguardando Check-in</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-box fa-2x mb-2"></i>
+                <h4>{{ stats.total_items }}</h4>
+                <p class="card-text">Items de Entrega</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Grid -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-qrcode"></i> Check-in de Evento</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Inscrição online com dependentes</li>
+                    <li><i class="fas fa-check text-success"></i> Geração automática de QR Codes</li>
+                    <li><i class="fas fa-check text-success"></i> Scanner via câmera web</li>
+                    <li><i class="fas fa-check text-success"></i> Busca por nome (modo offline)</li>
+                    <li><i class="fas fa-check text-success"></i> Dashboard em tempo real</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-truck"></i> Controle de Entregas</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Gestão de estoque por categoria</li>
+                    <li><i class="fas fa-check text-success"></i> Check-in de entregas com QR</li>
+                    <li><i class="fas fa-check text-success"></i> Controle de horários</li>
+                    <li><i class="fas fa-check text-success"></i> Tracking de responsáveis</li>
+                    <li><i class="fas fa-check text-success"></i> Relatórios de reconciliação</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-envelope"></i> Sistema de Comunicação</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Envio automático de QR Codes</li>
+                    <li><i class="fas fa-check text-success"></i> Lembretes por email</li>
+                    <li><i class="fas fa-check text-success"></i> Templates personalizáveis</li>
+                    <li><i class="fas fa-check text-success"></i> Tracking de entrega</li>
+                    <li><i class="fas fa-check text-success"></i> Logs de auditoria</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-white">
+                <h5><i class="fas fa-chart-line"></i> Capacidades</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-users"></i> <strong>2.500 participantes</strong></li>
+                    <li><i class="fas fa-mobile-alt"></i> Interface responsiva</li>
+                    <li><i class="fas fa-wifi-slash"></i> Modo offline</li>
+                    <li><i class="fas fa-file-excel"></i> Exportação Excel</li>
+                    <li><i class="fas fa-shield-alt"></i> LGPD Compliant</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-rocket"></i> Início Rápido</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-user-plus fa-3x text-primary"></i>
+                        </div>
+                        <h6>1. Inscrição</h6>
+                        <p class="small">Preencha o formulário com seus dados e dependentes</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-qrcode fa-3x text-success"></i>
+                        </div>
+                        <h6>2. QR Code</h6>
+                        <p class="small">Receba seu QR Code único por email</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-camera fa-3x text-info"></i>
+                        </div>
+                        <h6>3. Check-in</h6>
+                        <p class="small">Apresente o QR Code no evento para entrada</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-gift fa-3x text-warning"></i>
+                        </div>
+                        <h6>4. Retirada</h6>
+                        <p class="small">Use o mesmo QR Code para retirar itens</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

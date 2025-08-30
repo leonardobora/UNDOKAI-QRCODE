@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Estoque - Lightera BUNDOKAI{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-warehouse"></i> Gerenciar Estoque</h2>
+    <div>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="fas fa-plus"></i> Novo Item
+        </button>
+        <button class="btn btn-primary" onclick="importFromExcel()">
+            <i class="fas fa-file-excel"></i> Importar Excel
+        </button>
+        <button class="btn btn-outline-primary" onclick="exportToExcel()">
+            <i class="fas fa-download"></i> Exportar
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-boxes fa-2x mb-2"></i>
+                <h4>{{ items|length }}</h4>
+                <p class="card-text">Total de Items</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-layer-group fa-2x mb-2"></i>
+                <h4>{{ items|sum(attribute='estoque_inicial') }}</h4>
+                <p class="card-text">Estoque Total Inicial</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4>{{ items|sum(attribute='estoque_atual') }}</h4>
+                <p class="card-text">Disponível Agora</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-shipping-fast fa-2x mb-2"></i>
+                <h4>{{ items|sum(attribute='estoque_inicial') - items|sum(attribute='estoque_atual') }}</h4>
+                <p class="card-text">Items Entregues</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <label for="categoryFilter" class="form-label">Filtrar por Categoria:</label>
+                <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
+                    <option value="">Todas as Categorias</option>
+                    <option value="Festa">Festa</option>
+                    <option value="Cesta Básica">Cesta Básica</option>
+                    <option value="Brinquedos">Brinquedos</option>
+                    <option value="Material Escolar">Material Escolar</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="stockFilter" class="form-label">Filtrar por Estoque:</label>
+                <select class="form-select" id="stockFilter" onchange="filterByStock()">
+                    <option value="">Todos os Níveis</option>
+                    <option value="low">Baixo Estoque (≤10)</option>
+                    <option value="medium">Estoque Médio (11-50)</option>
+                    <option value="high">Estoque Alto (>50)</option>
+                    <option value="empty">Estoque Zerado</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="searchInput" class="form-label">Buscar Item:</label>
+                <input type="text" class="form-control" id="searchInput" placeholder="Nome do item..." onkeyup="searchItems()">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card">
+    <div class="card-header">
+        <h6><i class="fas fa-list"></i> Lista de Items</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="inventoryTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Item</th>
+                        <th>Categoria</th>
+                        <th>Estoque Inicial</th>
+                        <th>Estoque Atual</th>
+                        <th>Entregues</th>
+                        <th>Status</th>
+                        <th>Valor Unit.</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr data-category="{{ item.categoria }}" data-stock="{{ item.estoque_atual }}" data-name="{{ item.nome|lower }}">
+                        <td>
+                            <strong>{{ item.nome }}</strong>
+                            {% if item.descricao %}
+                                <br><small class="text-muted">{{ item.descricao[:50] }}{% if item.descricao|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if item.categoria == 'Festa' %}bg-primary
+                                {% elif item.categoria == 'Cesta Básica' %}bg-success
+                                {% elif item.categoria == 'Brinquedos' %}bg-info
+                                {% elif item.categoria == 'Material Escolar' %}bg-warning
+                                {% endif %}">
+                                {{ item.categoria }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ item.estoque_inicial }}</td>
+                        <td class="text-center">
+                            <span class="
+                                {% if item.estoque_atual == 0 %}text-danger
+                                {% elif item.estoque_atual <= 10 %}text-warning
+                                {% else %}text-success
+                                {% endif %} fw-bold">
+                                {{ item.estoque_atual }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ item.items_delivered }}</td>
+                        <td class="text-center">
+                            {% if item.estoque_atual == 0 %}
+                                <span class="badge bg-danger">Esgotado</span>
+                            {% elif item.estoque_atual <= 10 %}
+                                <span class="badge bg-warning">Baixo</span>
+                            {% elif item.estoque_atual <= 50 %}
+                                <span class="badge bg-info">Médio</span>
+                            {% else %}
+                                <span class="badge bg-success">Alto</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.preco_unitario > 0 %}
+                                R$ {{ "%.2f"|format(item.preco_unitario) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editItem({{ item.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="adjustStock({{ item.id }})">
+                                    <i class="fas fa-plus-minus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ item.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not items %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            <i class="fas fa-box-open fa-2x"></i>
+                            <p class="mt-2">Nenhum item cadastrado ainda</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                                <i class="fas fa-plus"></i> Cadastrar Primeiro Item
+                            </button>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-plus"></i> Novo Item de Estoque</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addItemForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome do Item *</label>
+                                <input type="text" class="form-control" id="nome" name="nome" required maxlength="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="categoria" class="form-label">Categoria *</label>
+                                <select class="form-select" id="categoria" name="categoria" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Festa">Festa</option>
+                                    <option value="Cesta Básica">Cesta Básica</option>
+                                    <option value="Brinquedos">Brinquedos</option>
+                                    <option value="Material Escolar">Material Escolar</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="2" 
+                                  placeholder="Descrição detalhada do item"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="estoque_inicial" class="form-label">Estoque Inicial *</label>
+                                <input type="number" class="form-control" id="estoque_inicial" name="estoque_inicial" 
+                                       min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="estoque_atual" class="form-label">Estoque Atual *</label>
+                                <input type="number" class="form-control" id="estoque_atual" name="estoque_atual" 
+                                       min="0" required>
+                                <div class="form-text">Normalmente igual ao estoque inicial</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="preco_unitario" class="form-label">Preço Unitário (R$)</label>
+                                <input type="number" class="form-control" id="preco_unitario" name="preco_unitario" 
+                                       min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="saveItem()">
+                    <i class="fas fa-save"></i> Salvar Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Adjustment Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-plus-minus"></i> Ajustar Estoque</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stockForm">
+                    <input type="hidden" id="stock_item_id" name="item_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Item:</label>
+                        <div class="form-control-plaintext fw-bold" id="stock_item_name"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Estoque Atual:</label>
+                        <div class="form-control-plaintext text-primary fw-bold" id="current_stock"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="adjustment_type" class="form-label">Tipo de Ajuste:</label>
+                        <select class="form-select" id="adjustment_type" name="adjustment_type" required>
+                            <option value="">Selecione...</option>
+                            <option value="add">Adicionar ao Estoque</option>
+                            <option value="remove">Remover do Estoque</option>
+                            <option value="set">Definir Estoque Exato</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="adjustment_quantity" class="form-label">Quantidade:</label>
+                        <input type="number" class="form-control" id="adjustment_quantity" name="adjustment_quantity" 
+                               min="0" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="adjustment_reason" class="form-label">Motivo do Ajuste:</label>
+                        <textarea class="form-control" id="adjustment_reason" name="adjustment_reason" rows="2" 
+                                  placeholder="Descreva o motivo do ajuste (opcional)"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" onclick="saveStockAdjustment()">
+                    <i class="fas fa-save"></i> Aplicar Ajuste
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByCategory() {
+    const category = document.getElementById('categoryFilter').value;
+    const rows = document.querySelectorAll('#inventoryTable tbody tr');
+    
+    rows.forEach(row => {
+        if (row.querySelector('td')) { // Skip empty state row
+            const rowCategory = row.dataset.category;
+            if (!category || rowCategory === category) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+function filterByStock() {
+    const stockLevel = document.getElementById('stockFilter').value;
+    const rows = document.querySelectorAll('#inventoryTable tbody tr');
+    
+    rows.forEach(row => {
+        if (row.querySelector('td')) { // Skip empty state row
+            const stock = parseInt(row.dataset.stock);
+            let show = true;
+            
+            switch(stockLevel) {
+                case 'low':
+                    show = stock > 0 && stock <= 10;
+                    break;
+                case 'medium':
+                    show = stock > 10 && stock <= 50;
+                    break;
+                case 'high':
+                    show = stock > 50;
+                    break;
+                case 'empty':
+                    show = stock === 0;
+                    break;
+                default:
+                    show = true;
+            }
+            
+            row.style.display = show ? '' : 'none';
+        }
+    });
+}
+
+function searchItems() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#inventoryTable tbody tr');
+    
+    rows.forEach(row => {
+        if (row.querySelector('td')) { // Skip empty state row
+            const name = row.dataset.name;
+            if (name.includes(search)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+function saveItem() {
+    const form = document.getElementById('addItemForm');
+    const formData = new FormData(form);
+    const itemData = Object.fromEntries(formData);
+    
+    // Validate required fields
+    if (!itemData.nome || !itemData.categoria || !itemData.estoque_inicial || !itemData.estoque_atual) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+    
+    fetch('/api/add_item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(itemData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Item adicionado com sucesso!');
+            bootstrap.Modal.getInstance(document.getElementById('addItemModal')).hide();
+            location.reload();
+        } else {
+            alert('Erro ao adicionar item: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao adicionar item. Tente novamente.');
+    });
+}
+
+function editItem(itemId) {
+    // For now, redirect to edit page or open edit modal
+    alert('Funcionalidade de edição será implementada em breve.');
+}
+
+function adjustStock(itemId) {
+    // Fetch current item data and open stock adjustment modal
+    fetch(`/api/item/${itemId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('stock_item_id').value = itemId;
+                document.getElementById('stock_item_name').textContent = data.item.nome;
+                document.getElementById('current_stock').textContent = data.item.estoque_atual;
+                
+                const modal = new bootstrap.Modal(document.getElementById('stockModal'));
+                modal.show();
+            } else {
+                alert('Erro ao carregar dados do item.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao carregar dados do item.');
+        });
+}
+
+function saveStockAdjustment() {
+    const form = document.getElementById('stockForm');
+    const formData = new FormData(form);
+    const adjustmentData = Object.fromEntries(formData);
+    
+    if (!adjustmentData.adjustment_type || !adjustmentData.adjustment_quantity) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+    
+    fetch('/api/adjust_stock', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(adjustmentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Estoque ajustado com sucesso!');
+            bootstrap.Modal.getInstance(document.getElementById('stockModal')).hide();
+            location.reload();
+        } else {
+            alert('Erro ao ajustar estoque: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao ajustar estoque. Tente novamente.');
+    });
+}
+
+function deleteItem(itemId) {
+    if (confirm('Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.')) {
+        fetch(`/api/delete_item/${itemId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Item excluído com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao excluir item: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir item. Tente novamente.');
+        });
+    }
+}
+
+function importFromExcel() {
+    // Create file input dynamically
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/import_inventory', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Importação concluída! ${data.imported_count} items importados.`);
+                    location.reload();
+                } else {
+                    alert('Erro na importação: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erro ao importar arquivo.');
+            });
+        }
+    };
+    input.click();
+}
+
+function exportToExcel() {
+    window.open('/api/export_inventory', '_blank');
+}
+
+// Auto-sync stock fields
+document.getElementById('estoque_inicial').addEventListener('input', function() {
+    document.getElementById('estoque_atual').value = this.value;
+});
+</script>
+{% endblock %}
