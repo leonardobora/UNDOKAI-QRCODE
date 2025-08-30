@@ -245,22 +245,35 @@ body {
 }
 
 .btn-light {
-    color: #212529 !important;
-    background-color: #f8f9fa !important;
-    border-color: #f8f9fa !important;
+    color: #000 !important;
+    background-color: #ffffff !important;
+    border-color: #ffffff !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+    border: 2px solid #ffffff !important;
 }
 
 .btn-light:hover,
 .btn-light:focus,
 .btn-light:active {
     color: #000 !important;
-    background-color: #e9ecef !important;
-    border-color: #e9ecef !important;
+    background-color: #f0f0f0 !important;
+    border-color: #f0f0f0 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-light .fas,
+.btn-light strong,
 .btn-light small {
-    color: #212529 !important;
+    color: #000 !important;
+    text-shadow: none !important;
+}
+
+/* High contrast for gradient backgrounds */
+.bg-gradient .text-white {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
 
 .btn:hover {
