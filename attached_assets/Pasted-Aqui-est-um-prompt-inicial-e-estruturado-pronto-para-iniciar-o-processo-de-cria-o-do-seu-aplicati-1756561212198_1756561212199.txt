@@ -1,0 +1,47 @@
+Aqui está um prompt inicial e estruturado, pronto para iniciar o processo de criação do seu aplicativo de controle de QR Code para eventos e entregas da Lightera, considerando o contexto do projeto, requisitos funcionais, referenciais técnicos e as demandas que você já mapeou, além das melhores práticas de organização por agents.md:
+
+Prompt para início do desenvolvimento do app de QR Code (Lightera - Bundokai/Final de Ano)
+
+Crie um MVP de um sistema web para geração, leitura e controle de QR Codes para eventos corporativos e campanhas de entrega de kits, priorizando simplicidade, rastreabilidade e baixo custo.
+
+Contexto do App:
+
+Aplicação substitui a solução Digitevent para check-in em eventos e controle de retirada de kits, economizando cerca de R$ 5.427,00 por evento.
+
+Público: até 2.500 participantes, múltiplos administradores, dados sensíveis LGPD, acessível via desktop/mobile.
+
+Funcionalidades obrigatórias:
+
+Inscrição via formulário (nome e dependentes → geração de QR Code único por usuário/família)
+
+Check-in por leitura de QR Code no evento (função scanner via câmera no navegador, modo offline e online)
+
+Controle de entregas (marca data/hora, responsável, estoque por categoria)
+
+Dashboard e relatórios (realtime, filtro por nome/estoque, exportação)
+
+Restrições e logs de auditoria para manipulação dos dados
+
+Stack sugerido:
+
+Backend: Flask (Python 3.8+), SQLite, Flask-SQLAlchemy
+
+Frontend: HTML5, Bootstrap 5, JS (HTML5-QRCode)
+
+Utilizar estrutura modular pronta para CI/CD e agents.md para orquestração
+
+AGENTS.md e organização:
+
+Crie estrutura de agents.md conforme referência (workflow automatizado, comandos atômicos, autosserviço e compatível com integração de IA):
+
+main-agents.md (build/deploy/run/cleanup/test)
+
+db-agents.md (setup, migrate, backup/local restore, integrity)
+
+frontend-agents.md (build/test/validate/deploy)
+
+security-agents.md (scan/audit/LGPD/compliance)
+
+deploy-agents.md (local/staging/prod/docker/rollback)
+
+monitoring-agents.md (healthcheck/metrics/logs/alerts)
