@@ -30,38 +30,45 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
+                        <a class="nav-link" href="{{ url_for('user_index') }}">
                             <i class="fas fa-home"></i> Início
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('register') }}">
-                            <i class="fas fa-user-plus"></i> Inscrever
+                            <i class="fas fa-user-plus"></i> Inscrição UNDOKAI
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('user_qr_lookup') }}">
+                            <i class="fas fa-search"></i> Meu QR Code
+                        </a>
+                    </li>
+                    
+                    <!-- Admin Menu - Only show if logged in as admin -->
+                    {% if session.get('admin_logged_in') %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-camera"></i> Check-in
+                        <a class="nav-link dropdown-toggle text-warning" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-shield"></i> Admin
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('admin_index') }}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard Admin
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('scanner') }}">
                                 <i class="fas fa-qrcode"></i> Scanner QR
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('checkin_search') }}">
-                                <i class="fas fa-search"></i> Buscar Nome
+                                <i class="fas fa-search"></i> Check-in Manual
                             </a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-chart-bar"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-box"></i> Entregas
-                        </a>
-                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-chart-bar"></i> Dashboard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('entregas_list') }}">
+                                <i class="fas fa-box"></i> Lista de Entregas
+                            </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('delivery') }}">
                                 <i class="fas fa-truck"></i> Gerenciar Entregas
                             </a></li>
@@ -70,10 +77,20 @@
                             </a></li>
                         </ul>
                     </li>
+                    {% endif %}
                 </ul>
                 
                 <span class="navbar-text">
-                    <i class="fas fa-calendar"></i> UNDOKAI 2025
+                    {% if session.get('admin_logged_in') %}
+                        <span class="badge bg-danger me-2">
+                            <i class="fas fa-user-shield"></i> Admin: {{ session.get('admin_username') }}
+                        </span>
+                        <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </a>
+                    {% else %}
+                        <i class="fas fa-calendar"></i> UNDOKAI 2025
+                    {% endif %}
                 </span>
             </div>
         </div>

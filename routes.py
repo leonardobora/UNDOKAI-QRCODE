@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, redirect, url_for, flash, make_response
+from flask import render_template, request, jsonify, redirect, url_for, flash, make_response, session
 from datetime import datetime, timedelta
 import uuid
 import qrcode
@@ -7,6 +7,7 @@ import base64
 from app import app, db
 from models import Participant, Dependent, CheckIn, DeliveryItem, DeliveryLog, EmailLog
 from utils import generate_qr_code, send_qr_email
+from auth import login_required, check_admin_credentials, is_admin
 
 @app.route('/')
 def user_index():
@@ -20,6 +21,7 @@ def user_index():
     })
 
 @app.route('/admin')
+@login_required
 def admin_index():
     """Admin homepage with full system overview"""
     total_participants = Participant.query.count()
@@ -33,6 +35,67 @@ def admin_index():
         'total_items': total_items,
         'pending_checkins': pending_checkins
     })
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if check_admin_credentials(username, password):
+            session['admin_logged_in'] = True
+            session['admin_username'] = username
+            flash('Login realizado com sucesso!', 'success')
+            return redirect(url_for('admin_index'))
+        else:
+            flash('Usuário ou senha inválidos!', 'danger')
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Admin logout"""
+    session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)
+    flash('Logout realizado com sucesso!', 'info')
+    return redirect(url_for('user_index'))
+
+@app.route('/entregas')
+@login_required
+def entregas_list():
+    """List of pre-selected employees for deliveries"""
+    # Get all participants with matricula (pre-selected for deliveries)
+    deliveries = Participant.query.filter(Participant.matricula.isnot(None)).all()
+    
+    # Calculate statistics
+    stats = {
+        'total_employees': len(deliveries),
+        'qr_generated': sum(1 for d in deliveries if d.qr_code),
+        'pending_delivery': sum(1 for d in deliveries if not any(log.status == 'delivered' for log in d.deliveries)),
+        'delivered': sum(1 for d in deliveries if any(log.status == 'delivered' for log in d.deliveries))
+    }
+    
+    # Format delivery data
+    delivery_data = []
+    for participant in deliveries:
+        # Get items for this participant
+        items = []
+        for log in participant.deliveries:
+            if log.item:
+                items.append(log.item.nome)
+        
+        delivery_data.append({
+            'id': participant.id,
+            'nome': participant.nome,
+            'matricula': participant.matricula,
+            'email': participant.email,
+            'items': items,
+            'qr_code': participant.qr_code,
+            'delivered': any(log.status == 'delivered' for log in participant.deliveries)
+        })
+    
+    return render_template('entregas_list.html', deliveries=delivery_data, stats=stats)
 
 @app.route('/index')
 def index():
@@ -135,16 +198,19 @@ def success(participant_id):
     return render_template('success.html', participant=participant, qr_image=qr_img)
 
 @app.route('/scanner')
+@login_required
 def scanner():
     """QR code scanner interface"""
     return render_template('scanner.html')
 
 @app.route('/checkin/search')
+@login_required
 def checkin_search():
     """Manual participant search for offline check-in"""
     return render_template('checkin_search.html')
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     """Real-time check-in dashboard"""
     total_participants = Participant.query.count()
@@ -179,6 +245,7 @@ def dashboard():
                          hourly_stats=hourly_stats)
 
 @app.route('/delivery')
+@login_required
 def delivery():
     """Delivery management interface"""
     items_by_category = {}
@@ -191,6 +258,7 @@ def delivery():
     return render_template('delivery.html', items_by_category=items_by_category)
 
 @app.route('/inventory')
+@login_required
 def inventory():
     """Inventory management"""
     items = DeliveryItem.query.order_by(DeliveryItem.categoria, DeliveryItem.nome).all()
@@ -465,6 +533,90 @@ def download_excel_template():
     except Exception as e:
         app.logger.error(f'Excel template error: {str(e)}')
         return jsonify({'success': False, 'message': 'Erro ao gerar template'})
+
+@app.route('/api/send_delivery_qrcodes', methods=['POST'])
+@login_required
+def send_delivery_qrcodes():
+    """Send QR codes to all employees selected for deliveries"""
+    try:
+        # Get all participants with matricula (pre-selected for deliveries)
+        employees = Participant.query.filter(Participant.matricula.isnot(None)).all()
+        
+        sent_count = 0
+        failed_count = 0
+        
+        for employee in employees:
+            # Generate QR code if not exists
+            if not employee.qr_code:
+                employee.qr_code = str(uuid.uuid4())[:8].upper()
+                db.session.add(employee)
+            
+            # Send email with QR code
+            try:
+                if send_qr_email(employee.email, employee.nome, employee.qr_code):
+                    sent_count += 1
+                    # Log email sent
+                    email_log = EmailLog(
+                        participant_id=employee.id,
+                        email_type='delivery_qr',
+                        subject='UNDOKAI 2025 - QR Code para Retirada',
+                        status='sent'
+                    )
+                    db.session.add(email_log)
+                else:
+                    failed_count += 1
+            except Exception as e:
+                failed_count += 1
+                app.logger.error(f'Failed to send QR to {employee.email}: {str(e)}')
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'QR codes enviados: {sent_count} sucesso, {failed_count} falhas',
+            'sent': sent_count,
+            'failed': failed_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Send delivery QR codes error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao enviar QR codes'})
+
+@app.route('/api/import_delivery_list', methods=['POST'])
+@login_required
+def import_delivery_list():
+    """Import delivery list from Excel/CSV"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'Nenhum arquivo enviado'})
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'Arquivo não selecionado'})
+        
+        # Process the file (simplified for now)
+        # In production, use pandas to read Excel/CSV
+        imported_count = 0
+        
+        # Example: Process CSV data
+        # df = pd.read_csv(file)
+        # for _, row in df.iterrows():
+        #     participant = Participant(...)
+        #     db.session.add(participant)
+        #     imported_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{imported_count} registros importados com sucesso'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Import delivery list error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao importar lista'})
 
 @app.route('/health')
 def health():

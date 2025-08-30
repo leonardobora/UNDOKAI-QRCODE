@@ -84,9 +84,15 @@
 <!-- Link to Admin Interface -->
 <div class="row mt-4">
     <div class="col-12 text-center">
-        <a href="{{ url_for('admin_index') }}" class="btn btn-sm btn-outline-secondary">
+        {% if not session.get('admin_logged_in') %}
+        <a href="{{ url_for('admin_login') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-cog"></i> Acesso Administrativo
         </a>
+        {% else %}
+        <a href="{{ url_for('admin_index') }}" class="btn btn-sm btn-danger">
+            <i class="fas fa-user-shield"></i> Dashboard Administrativo
+        </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

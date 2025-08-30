@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Login Administrativo - Lightera UNDOKAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-user-shield"></i> Acesso Administrativo</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuário</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-sign-in-alt"></i> Entrar
+                        </button>
+                        <a href="{{ url_for('user_index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3" role="alert">
+            <i class="fas fa-info-circle"></i> 
+            <strong>Atenção:</strong> Este acesso é restrito a administradores do sistema.
+        </div>
+    </div>
+</div>
+{% endblock %}

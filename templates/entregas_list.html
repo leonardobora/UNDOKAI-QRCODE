@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Entregas - Lightera UNDOKAI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4><i class="fas fa-box"></i> Sistema de Entregas - Lista Pré-Selecionada</h4>
+                <p class="mb-0">Funcionários selecionados para receber kits e cestas</p>
+            </div>
+            <div class="card-body">
+                
+                <!-- Filter Controls -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Buscar por nome ou matrícula...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">Todas as categorias</option>
+                            <option value="Cesta de Natal">Cesta de Natal</option>
+                            <option value="Kit Escolar">Kit Escolar</option>
+                            <option value="Brinquedos">Brinquedos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5 text-end">
+                        <button class="btn btn-success" onclick="sendQRCodes()">
+                            <i class="fas fa-qrcode"></i> Gerar/Enviar QR Codes
+                        </button>
+                        <button class="btn btn-primary" onclick="importList()">
+                            <i class="fas fa-upload"></i> Importar Lista
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Delivery List Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Matrícula</th>
+                                <th>Email</th>
+                                <th>Itens a Receber</th>
+                                <th>QR Code</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deliveryListTable">
+                            {% for delivery in deliveries %}
+                            <tr>
+                                <td>{{ delivery.nome }}</td>
+                                <td><span class="badge bg-secondary">{{ delivery.matricula }}</span></td>
+                                <td>{{ delivery.email }}</td>
+                                <td>
+                                    {% for item in delivery.items %}
+                                    <span class="badge bg-info me-1">{{ item }}</span>
+                                    {% endfor %}
+                                    <span class="badge bg-warning text-dark">Cesta de Natal</span>
+                                </td>
+                                <td>
+                                    {% if delivery.qr_code %}
+                                    <code>{{ delivery.qr_code }}</code>
+                                    {% else %}
+                                    <span class="text-muted">Não gerado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if delivery.delivered %}
+                                    <span class="badge bg-success">Entregue</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="viewDelivery({{ delivery.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    {% if not delivery.qr_code %}
+                                    <button class="btn btn-sm btn-success" onclick="generateQR({{ delivery.id }})">
+                                        <i class="fas fa-qrcode"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Statistics -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h5>{{ stats.total_employees }}</h5>
+                                <p class="mb-0">Total de Funcionários</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h5>{{ stats.qr_generated }}</h5>
+                                <p class="mb-0">QR Codes Gerados</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h5>{{ stats.pending_delivery }}</h5>
+                                <p class="mb-0">Entregas Pendentes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5>{{ stats.delivered }}</h5>
+                                <p class="mb-0">Entregas Realizadas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Importar Lista de Entregas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Faça upload de um arquivo Excel/CSV com as colunas:</p>
+                <ul>
+                    <li>Nome</li>
+                    <li>Matrícula</li>
+                    <li>Email</li>
+                    <li>Itens (separados por vírgula)</li>
+                </ul>
+                <input type="file" class="form-control" id="importFile" accept=".csv,.xlsx">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="uploadFile()">Importar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function sendQRCodes() {
+    if(confirm('Enviar QR codes por email para todos os funcionários selecionados?')) {
+        fetch('/api/send_delivery_qrcodes', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message || 'QR codes enviados com sucesso!');
+            location.reload();
+        });
+    }
+}
+
+function importList() {
+    const modal = new bootstrap.Modal(document.getElementById('importModal'));
+    modal.show();
+}
+
+function uploadFile() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Por favor, selecione um arquivo.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    fetch('/api/import_delivery_list', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || 'Lista importada com sucesso!');
+        location.reload();
+    })
+    .catch(error => {
+        alert('Erro ao importar lista: ' + error);
+    });
+}
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#deliveryListTable tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchValue) ? '' : 'none';
+    });
+});
+
+// Category filter
+document.getElementById('categoryFilter').addEventListener('change', function() {
+    const filterValue = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#deliveryListTable tr');
+    
+    rows.forEach(row => {
+        if (!filterValue) {
+            row.style.display = '';
+        } else {
+            const items = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+            row.style.display = items.includes(filterValue) ? '' : 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
 from datetime import datetime
 from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Participant(db.Model):
     """Model for event participants"""
@@ -8,6 +9,7 @@ class Participant(db.Model):
     email = db.Column(db.String(120), nullable=False)
     telefone = db.Column(db.String(20))
     departamento = db.Column(db.String(50))
+    matricula = db.Column(db.String(50))  # Employee registration number
     qr_code = db.Column(db.String(50), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -71,6 +73,7 @@ class DeliveryLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     participant_id = db.Column(db.Integer, db.ForeignKey('participant.id'), nullable=False)
     item_id = db.Column(db.Integer, db.ForeignKey('delivery_item.id'), nullable=False)
+    matricula = db.Column(db.String(50))  # Employee registration for delivery
     delivery_time = db.Column(db.DateTime, default=datetime.utcnow)
     quantidade = db.Column(db.Integer, default=1)
     status = db.Column(db.String(20), default='delivered')  # delivered, pending, cancelled
