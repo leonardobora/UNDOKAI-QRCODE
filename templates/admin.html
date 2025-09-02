@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Administrativo - Lightera UNDOKAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, var(--lightera-purple), var(--lightera-purple-dark));
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 15px;
+    }
+    
+    .admin-card {
+        border-left: 4px solid var(--lightera-purple);
+        transition: all 0.3s ease;
+    }
+    
+    .admin-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(111, 66, 193, 0.15);
+    }
+    
+    .activity-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .activity-item:hover {
+        border-left-color: var(--lightera-purple);
+        background-color: rgba(111, 66, 193, 0.05);
+    }
+    
+    .user-management-table tr:hover {
+        background-color: rgba(111, 66, 193, 0.1);
+    }
+    
+    .quick-action-btn {
+        height: 120px;
+        border-radius: 15px;
+        border: 2px dashed #dee2e6;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-action-btn:hover {
+        border-color: var(--lightera-purple);
+        background-color: rgba(111, 66, 193, 0.1);
+        transform: translateY(-3px);
+    }
+    
+    .participant-list-item {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .participant-list-item:hover {
+        background-color: rgba(111, 66, 193, 0.1);
+    }
+    
+    .participant-list-item.selected {
+        background-color: rgba(111, 66, 193, 0.2);
+        border-left: 4px solid var(--lightera-purple);
+    }
+    
+    .bulk-actions-panel {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border: 2px dashed var(--lightera-purple);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .search-box {
+        border-radius: 25px;
+        border: 2px solid #dee2e6;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-box:focus {
+        border-color: var(--lightera-purple);
+        box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+        transform: scale(1.02);
+    }
+    
+    @media (max-width: 768px) {
+        .admin-header {
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+        }
+        
+        .quick-action-btn {
+            height: 80px;
+            margin-bottom: 1rem;
+        }
+        
+        .search-box {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header text-center">
+    <div class="container">
+        <h1><i class="fas fa-user-shield"></i> Painel Administrativo</h1>
+        <p class="lead mb-0">Gerenciamento completo do sistema UNDOKAI</p>
+    </div>
+</div>
+
+<!-- Quick Stats Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card admin-card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h4 id="admin-total-participants">{{ stats.total_participants }}</h4>
+                <small>Total Participantes</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card admin-card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4 id="admin-total-checkins">{{ stats.total_checkins }}</h4>
+                <small>Check-ins Realizados</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card admin-card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4 id="admin-pending-checkins">{{ stats.pending_checkins }}</h4>
+                <small>Aguardando</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card admin-card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-user-cog fa-2x mb-2"></i>
+                <h4>{{ stats.total_admins or 3 }}</h4>
+                <small>Administradores</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Operations Section -->
+<div class="bulk-actions-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-tasks"></i> Operações em Lote</h5>
+        <div>
+            <span id="selected-count" class="badge bg-primary">0 selecionados</span>
+            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="clearSelection()">
+                <i class="fas fa-times"></i> Limpar Seleção
+            </button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-success" onclick="performBulkCheckin()" disabled id="bulk-checkin-btn">
+                    <i class="fas fa-check-double"></i> Check-in em Lote
+                </button>
+                <button type="button" class="btn btn-info" onclick="exportSelected()" disabled id="export-selected-btn">
+                    <i class="fas fa-file-excel"></i> Exportar Selecionados
+                </button>
+                <button type="button" class="btn btn-warning" onclick="sendBulkEmail()" disabled id="email-selected-btn">
+                    <i class="fas fa-envelope"></i> Enviar Emails
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Search & Participant Management -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><i class="fas fa-search"></i> Busca e Seleção de Participantes</h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                        <i class="fas fa-check-square"></i> Selecionar Todos
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectCheckedIn()">
+                        <i class="fas fa-check"></i> Com Check-in
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectPending()">
+                        <i class="fas fa-clock"></i> Pendentes
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <input type="text" class="form-control search-box" id="participant-search" 
+                           placeholder="🔍 Digite o nome, email ou departamento para buscar..." 
+                           accesskey="s">
+                    <small class="text-muted">Dica: Use Alt+S para focar na busca</small>
+                </div>
+                
+                <!-- Filter Options -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <select class="form-select" id="department-filter">
+                            <option value="">Todos os departamentos</option>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="status-filter">
+                            <option value="">Todos os status</option>
+                            <option value="checked_in">Com check-in</option>
+                            <option value="pending">Aguardando check-in</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Participants List -->
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" class="form-check-input" id="select-all-checkbox">
+                                </th>
+                                <th>Nome</th>
+                                <th>Departamento</th>
+                                <th>Status</th>
+                                <th width="80">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participants-tbody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Paginação" class="mt-3">
+                    <ul class="pagination pagination-sm justify-content-center" id="pagination">
+                        <!-- Will be populated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card admin-card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Ações Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button class="btn quick-action-btn w-100 d-flex flex-column justify-content-center align-items-center" onclick="openDashboard()">
+                            <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                            <small>Dashboard</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn quick-action-btn w-100 d-flex flex-column justify-content-center align-items-center" onclick="openScanner()">
+                            <i class="fas fa-qrcode fa-2x mb-2"></i>
+                            <small>Scanner</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn quick-action-btn w-100 d-flex flex-column justify-content-center align-items-center" onclick="exportAllData()">
+                            <i class="fas fa-download fa-2x mb-2"></i>
+                            <small>Export Geral</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn quick-action-btn w-100 d-flex flex-column justify-content-center align-items-center" onclick="backupDatabase()">
+                            <i class="fas fa-database fa-2x mb-2"></i>
+                            <small>Backup</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><i class="fas fa-history"></i> Atividade Recente</h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshActivity()">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="activity-log" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Management Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><i class="fas fa-users-cog"></i> Gerenciamento de Usuários</h6>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="fas fa-plus"></i> Adicionar Usuário
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover user-management-table">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Tipo</th>
+                                <th>Último Acesso</th>
+                                <th>Status</th>
+                                <th width="120">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <!-- Static demo data for now -->
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-shield text-primary me-2"></i>
+                                        <div>
+                                            <div class="fw-bold">admin</div>
+                                            <small class="text-muted">Administrador Principal</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-danger">Super Admin</span></td>
+                                <td>{{ moment().format('DD/MM/YYYY HH:mm') if moment else 'Agora' }}</td>
+                                <td><span class="badge bg-success">Ativo</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user text-info me-2"></i>
+                                        <div>
+                                            <div class="fw-bold">staff1</div>
+                                            <small class="text-muted">Equipe de Evento</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-info">Staff</span></td>
+                                <td>Nunca</td>
+                                <td><span class="badge bg-secondary">Inativo</span></td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Adicionar Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nome de Usuário</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userType" class="form-label">Tipo de Usuário</label>
+                        <select class="form-select" id="userType" required>
+                            <option value="">Selecione...</option>
+                            <option value="admin">Administrador</option>
+                            <option value="staff">Equipe</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="displayName" class="form-label">Nome de Exibição</label>
+                        <input type="text" class="form-control" id="displayName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">
+                    <i class="fas fa-save"></i> Salvar Usuário
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+<script>
+// Initialize admin panel
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof AdminPanel !== 'undefined') {
+        window.adminPanel = new AdminPanel();
+    }
+    
+    // Auto-refresh stats every 30 seconds
+    setInterval(refreshAdminStats, 30000);
+    
+    // Initialize keyboard shortcuts
+    initializeKeyboardShortcuts();
+});
+
+function refreshAdminStats() {
+    fetch('/api/dashboard_stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('admin-total-participants').textContent = data.total_participants;
+            document.getElementById('admin-total-checkins').textContent = data.total_checkins;
+            document.getElementById('admin-pending-checkins').textContent = data.pending_checkins;
+        })
+        .catch(error => console.error('Failed to refresh admin stats:', error));
+}
+
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Alt+S for search
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('participant-search').focus();
+        }
+        
+        // Alt+E for export
+        if (e.altKey && e.key === 'e') {
+            e.preventDefault();
+            exportAllData();
+        }
+        
+        // Alt+D for dashboard
+        if (e.altKey && e.key === 'd') {
+            e.preventDefault();
+            openDashboard();
+        }
+        
+        // Ctrl+A for select all (when in participants table)
+        if (e.ctrlKey && e.key === 'a' && document.activeElement.closest('#participants-tbody')) {
+            e.preventDefault();
+            selectAll();
+        }
+    });
+}
+
+// Quick action functions
+function openDashboard() {
+    window.open('{{ url_for("dashboard") }}', '_blank');
+}
+
+function openScanner() {
+    window.open('{{ url_for("scanner") }}', '_blank');
+}
+
+function exportAllData() {
+    window.location.href = '/api/export/checkins';
+}
+
+function backupDatabase() {
+    if (confirm('Deseja realizar backup do banco de dados?')) {
+        // Implementation would depend on database type
+        alert('Funcionalidade de backup será implementada em breve.');
+    }
+}
+
+function selectAll() {
+    if (window.adminPanel) {
+        window.adminPanel.selectAll();
+    }
+}
+
+function selectCheckedIn() {
+    if (window.adminPanel) {
+        window.adminPanel.selectByStatus('checked_in');
+    }
+}
+
+function selectPending() {
+    if (window.adminPanel) {
+        window.adminPanel.selectByStatus('pending');
+    }
+}
+
+function clearSelection() {
+    if (window.adminPanel) {
+        window.adminPanel.clearSelection();
+    }
+}
+
+function performBulkCheckin() {
+    if (window.adminPanel) {
+        window.adminPanel.performBulkCheckin();
+    }
+}
+
+function exportSelected() {
+    if (window.adminPanel) {
+        window.adminPanel.exportSelected();
+    }
+}
+
+function sendBulkEmail() {
+    if (window.adminPanel) {
+        window.adminPanel.sendBulkEmail();
+    }
+}
+
+function refreshActivity() {
+    if (window.adminPanel) {
+        window.adminPanel.refreshActivity();
+    }
+}
+
+function saveUser() {
+    const form = document.getElementById('addUserForm');
+    const formData = new FormData(form);
+    
+    // For now, just show success message
+    // In real implementation, this would send data to server
+    alert('Usuário adicionado com sucesso!');
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+    modal.hide();
+    
+    // Reset form
+    form.reset();
+}
+</script>
+{% endblock %}

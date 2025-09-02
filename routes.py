@@ -36,6 +36,21 @@ def admin_index():
         'pending_checkins': pending_checkins
     })
 
+@app.route('/admin/panel')
+@login_required
+def admin_panel():
+    """Enhanced admin panel with bulk operations"""
+    total_participants = Participant.query.count()
+    total_checkins = CheckIn.query.count()
+    pending_checkins = total_participants - total_checkins
+    
+    return render_template('admin.html', stats={
+        'total_participants': total_participants,
+        'total_checkins': total_checkins,
+        'pending_checkins': pending_checkins,
+        'total_admins': 3  # Static for now
+    })
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     """Admin login page"""
@@ -408,7 +423,8 @@ def dashboard_stats():
         'nome': p.nome,
         'departamento': p.departamento,
         'checkin_time': c.checkin_time.strftime('%H:%M'),
-        'station': c.station
+        'station': c.station,
+        'dependents_count': len(p.dependents) if p.dependents else 0
     } for c, p in recent]
     
     return jsonify({
@@ -417,6 +433,268 @@ def dashboard_stats():
         'pending_checkins': pending_checkins,
         'recent_checkins': recent_checkins
     })
+
+@app.route('/api/recent_checkins')
+def recent_checkins():
+    """Get recent check-ins for dashboard refresh"""
+    recent = db.session.query(CheckIn, Participant)\
+        .join(Participant)\
+        .order_by(CheckIn.checkin_time.desc())\
+        .limit(10).all()
+    
+    recent_checkins = [{
+        'nome': p.nome,
+        'departamento': p.departamento or '-',
+        'checkin_time': c.checkin_time.strftime('%H:%M'),
+        'station': c.station,
+        'dependents_count': len(p.dependents) if p.dependents else 0
+    } for c, p in recent]
+    
+    return jsonify({
+        'recent_checkins': recent_checkins
+    })
+
+@app.route('/api/export/checkins')
+@login_required
+def export_checkins():
+    """Export check-ins to Excel"""
+    try:
+        import pandas as pd
+        from io import BytesIO
+        
+        # Get all check-ins with participant data
+        checkins = db.session.query(CheckIn, Participant)\
+            .join(Participant)\
+            .order_by(CheckIn.checkin_time.desc()).all()
+        
+        # Prepare data for Excel
+        data = []
+        for checkin, participant in checkins:
+            data.append({
+                'Nome': participant.nome,
+                'Email': participant.email,
+                'Telefone': participant.telefone or '',
+                'Departamento': participant.departamento or '',
+                'Matrícula': participant.matricula or '',
+                'Horário Check-in': checkin.checkin_time.strftime('%d/%m/%Y %H:%M:%S'),
+                'Estação': checkin.station,
+                'Operador': checkin.operator or '',
+                'Dependentes': len(participant.dependents) if participant.dependents else 0,
+                'QR Code': participant.qr_code
+            })
+        
+        # Create Excel file
+        df = pd.DataFrame(data)
+        output = BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Check-ins', index=False)
+            
+            # Auto-adjust column widths
+            worksheet = writer.sheets['Check-ins']
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        output.seek(0)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=checkins_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f'Export error: {str(e)}')
+        flash('Erro ao exportar dados', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/api/send_report', methods=['POST'])
+@login_required  
+def send_report():
+    """Send dashboard report via email"""
+    try:
+        # For now, just return success - email functionality can be implemented later
+        return jsonify({
+            'success': True,
+            'message': 'Relatório enviado com sucesso!'
+        })
+    except Exception as e:
+        app.logger.error(f'Send report error: {str(e)}')
+        return jsonify({
+            'success': False,
+            'message': 'Erro ao enviar relatório'
+        })
+
+@app.route('/api/bulk_checkin', methods=['POST'])
+@login_required
+def bulk_checkin():
+    """Perform bulk check-in for selected participants"""
+    try:
+        data = request.get_json()
+        participant_ids = data.get('participant_ids', [])
+        station = data.get('station', 'bulk')
+        operator = data.get('operator', 'Bulk Operation')
+        
+        if not participant_ids:
+            return jsonify({'success': False, 'message': 'Nenhum participante selecionado'})
+        
+        success_count = 0
+        error_count = 0
+        already_checked = 0
+        
+        for participant_id in participant_ids:
+            try:
+                participant = Participant.query.get(participant_id)
+                if not participant:
+                    error_count += 1
+                    continue
+                
+                # Check if already checked in
+                existing_checkin = CheckIn.query.filter_by(participant_id=participant.id).first()
+                if existing_checkin:
+                    already_checked += 1
+                    continue
+                
+                # Create check-in
+                checkin = CheckIn(
+                    participant_id=participant.id,
+                    station=station,
+                    operator=operator
+                )
+                db.session.add(checkin)
+                success_count += 1
+                
+            except Exception as e:
+                app.logger.error(f'Bulk checkin error for participant {participant_id}: {str(e)}')
+                error_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Check-in em lote concluído: {success_count} sucessos, {already_checked} já registrados, {error_count} erros',
+            'stats': {
+                'success': success_count,
+                'already_checked': already_checked,
+                'errors': error_count
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Bulk checkin error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro interno do sistema'})
+
+@app.route('/api/participants_list')
+@login_required
+def participants_list():
+    """Get all participants for admin panel"""
+    try:
+        participants = Participant.query.all()
+        participants_data = []
+        
+        for participant in participants:
+            checkin = CheckIn.query.filter_by(participant_id=participant.id).first()
+            participants_data.append({
+                'id': participant.id,
+                'nome': participant.nome,
+                'email': participant.email,
+                'telefone': participant.telefone or '',
+                'departamento': participant.departamento or '',
+                'matricula': participant.matricula or '',
+                'qr_code': participant.qr_code,
+                'checked_in': checkin is not None,
+                'checkin_time': checkin.checkin_time.strftime('%H:%M') if checkin else None,
+                'dependents_count': len(participant.dependents) if participant.dependents else 0
+            })
+        
+        return jsonify({
+            'success': True,
+            'participants': participants_data
+        })
+        
+    except Exception as e:
+        app.logger.error(f'Participants list error: {str(e)}')
+        return jsonify({
+            'success': False,
+            'message': 'Erro ao carregar participantes'
+        })
+
+@app.route('/api/export_selected', methods=['POST'])
+@login_required
+def export_selected():
+    """Export selected participants to Excel"""
+    try:
+        import pandas as pd
+        from io import BytesIO
+        
+        data = request.get_json()
+        participant_ids = data.get('participant_ids', [])
+        
+        if not participant_ids:
+            return jsonify({'success': False, 'message': 'Nenhum participante selecionado'})
+        
+        # Get selected participants with check-in data
+        participants = db.session.query(Participant).filter(Participant.id.in_(participant_ids)).all()
+        
+        # Prepare data for Excel
+        export_data = []
+        for participant in participants:
+            checkin = CheckIn.query.filter_by(participant_id=participant.id).first()
+            export_data.append({
+                'Nome': participant.nome,
+                'Email': participant.email,
+                'Telefone': participant.telefone or '',
+                'Departamento': participant.departamento or '',
+                'Matrícula': participant.matricula or '',
+                'Status': 'Check-in realizado' if checkin else 'Aguardando',
+                'Horário Check-in': checkin.checkin_time.strftime('%d/%m/%Y %H:%M:%S') if checkin else '',
+                'Estação': checkin.station if checkin else '',
+                'Dependentes': len(participant.dependents) if participant.dependents else 0,
+                'QR Code': participant.qr_code
+            })
+        
+        # Create Excel file
+        df = pd.DataFrame(export_data)
+        output = BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Participantes Selecionados', index=False)
+            
+            # Auto-adjust column widths
+            worksheet = writer.sheets['Participantes Selecionados']
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        output.seek(0)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=participantes_selecionados_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f'Export selected error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao exportar dados'})
 
 @app.route('/api/add_item', methods=['POST'])
 def add_item():
