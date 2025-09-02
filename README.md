@@ -1,6 +1,6 @@
 # Lightera UNDOKAI - Sistema de Check-in e Entregas
 
-![CI/CD Status](https://github.com/leonardobora/UNDOKAI-QRCODE/workflows/Lightera%20BUNDOKAI%20CI%2FCD/badge.svg)
+![CI/CD Status](https://github.com/leonardobora/UNDOKAI-QRCODE/workflows/Lightera%20UNDOKAI%20CI%2FCD/badge.svg)
 ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
@@ -171,7 +171,7 @@ export FLASK_ENV=development && python app.py
 export FLASK_ENV=production && gunicorn --workers=4 --bind=0.0.0.0:5000 app:app
 
 # Backup do banco
-cp bundokai.db backups/bundokai_$(date +%Y%m%d_%H%M%S).db
+cp undokai.db backups/undokai_$(date +%Y%m%d_%H%M%S).db
 
 # Estatísticas do sistema
 python -c "from utils import get_checkin_statistics; print(get_checkin_statistics())"
@@ -197,7 +197,7 @@ tail -f logs/app.log
 python -c "import psutil; print(f'Memory usage: {psutil.virtual_memory().percent}%')"
 
 # Tamanho do banco de dados
-python -c "import os; print(f'Database size: {os.path.getsize(\"bundokai.db\") / 1024 / 1024:.2f} MB')"
+python -c "import os; print(f'Database size: {os.path.getsize(\"undokai.db\") / 1024 / 1024:.2f} MB')"
 ```
 
 ## 🐳 Deploy com Docker
@@ -205,10 +205,10 @@ python -c "import os; print(f'Database size: {os.path.getsize(\"bundokai.db\") /
 ### Build da Imagem
 ```bash
 # Construir imagem Docker
-docker build -t lightera-bundokai .
+docker build -t lightera-undokai .
 
 # Executar container
-docker run -p 5000:5000 -v $(pwd)/bundokai.db:/app/bundokai.db lightera-bundokai
+docker run -p 5000:5000 -v $(pwd)/undokai.db:/app/undokai.db lightera-undokai
 ```
 
 ### Docker Compose (Recomendado)
@@ -229,7 +229,7 @@ docker-compose down
 ```bash
 # Configurar variáveis de ambiente de produção
 export FLASK_ENV=production
-export DATABASE_URL=sqlite:///bundokai_prod.db
+export DATABASE_URL=sqlite:///undokai_prod.db
 export SESSION_SECRET=your-secret-key-here
 
 # Criar diretórios de produção
@@ -276,7 +276,7 @@ server {
 ```bash
 # .env para produção
 SESSION_SECRET=your-super-secret-key-minimum-32-chars
-DATABASE_URL=postgresql://user:pass@localhost/bundokai  # Para PostgreSQL
+DATABASE_URL=postgresql://user:pass@localhost/undokai  # Para PostgreSQL
 SMTP_USERNAME=your-email@company.com
 SMTP_PASSWORD=your-app-password
 SMTP_SERVER=smtp.gmail.com
@@ -313,7 +313,7 @@ pip install --force-reinstall -e .
 #### 2. Erro de Banco de Dados
 ```bash
 # Recriar banco
-rm bundokai.db
+rm undokai.db
 python -c "from app import app, db; app.app_context().push(); db.create_all()"
 ```
 

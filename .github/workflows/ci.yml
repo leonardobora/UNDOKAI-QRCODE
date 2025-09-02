@@ -1,4 +1,4 @@
-name: Lightera BUNDOKAI CI/CD
+name: Lightera UNDOKAI CI/CD
 
 on:
   push:

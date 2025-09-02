@@ -1,7 +1,7 @@
 [project]
-name = "lightera-bundokai"
+name = "lightera-undokai"
 version = "0.1.0"
-description = "Lightera BUNDOKAI - Sistema de Check-in e Entregas para eventos corporativos"
+description = "Lightera UNDOKAI - Sistema de Check-in e Entregas para eventos corporativos"
 requires-python = ">=3.11"
 dependencies = [
     "email-validator>=2.3.0",

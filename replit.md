@@ -1,6 +1,6 @@
 # Overview
 
-Lightera BUNDOKAI is a comprehensive event management system designed to replace the costly Digitevent solution (R$ 5,427.00) for corporate events at Furukawa Electric/Lightera. The system handles participant registration, QR code generation, check-in management, and end-of-year delivery tracking for up to 2,500 participants. It features a multi-functional approach combining event check-in capabilities with inventory management for corporate deliveries across different categories (party supplies, gift baskets, toys, school materials).
+Lightera UNDOKAI is a comprehensive event management system designed to replace the costly Digitevent solution (R$ 5,427.00) for corporate events at Furukawa Electric/Lightera. The system handles participant registration, QR code generation, check-in management, and end-of-year delivery tracking for up to 2,500 participants. It features a multi-functional approach combining event check-in capabilities with inventory management for corporate deliveries across different categories (party supplies, gift baskets, toys, school materials).
 
 # User Preferences
 

@@ -1,4 +1,4 @@
-# AGENTS.md - LIGHTERA BUNDOKAI SYSTEM
+# AGENTS.md - LIGHTERA UNDOKAI SYSTEM
 
 Sistema de check-in e controle de entregas para eventos corporativos da Lightera/Furukawa Electric.
 Substitui solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para até 2500 participantes.
@@ -6,7 +6,7 @@ Substitui solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para
 ## setup
 
 - python3 --version
-- python3 -m venv venv --prompt="lightera-bundokai"
+- python3 -m venv venv --prompt="lightera-undokai"
 - source venv/bin/activate
 - python -m pip install --upgrade pip setuptools wheel
 - pip install Flask==2.3.3 Flask-SQLAlchemy==3.0.5 qrcode[pil]==7.4.2 pandas==2.1.1 gunicorn==21.2.0 python-dotenv==1.0.0 Pillow==10.0.1 opencv-python-headless==4.8.1.78
@@ -44,7 +44,7 @@ Substitui solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para
 ## deploy
 
 - export FLASK_ENV=production
-- export DATABASE_URL=sqlite:///bundokai_prod.db
+- export DATABASE_URL=sqlite:///undokai_prod.db
 - gunicorn --workers=4 --bind=0.0.0.0:5000 app:app
 
 ## cleanup
@@ -57,7 +57,7 @@ Substitui solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para
 
 ## backup
 
-- cp bundokai.db backups/bundokai_$(date +%Y%m%d_%H%M%S).db
+- cp undokai.db backups/undokai_$(date +%Y%m%d_%H%M%S).db
 - python -c "from app import app, db; from models import *; app.app_context().push(); print(f'Participants: {Participant.query.count()}, Check-ins: {CheckIn.query.count()}')"
 - tar -czf backups/static_$(date +%Y%m%d_%H%M%S).tar.gz static/
 
@@ -65,7 +65,7 @@ Substitui solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para
 
 - python -c "from app import app; app.app_context().push(); print('Application health: OK')"
 - python -c "import psutil; print(f'Memory usage: {psutil.virtual_memory().percent}%')"
-- python -c "import os; print(f'Database size: {os.path.getsize("bundokai.db") / 1024 / 1024:.2f} MB')"
+- python -c "import os; print(f'Database size: {os.path.getsize("undokai.db") / 1024 / 1024:.2f} MB')"
 - tail -f logs/app.log
 
 ## stats

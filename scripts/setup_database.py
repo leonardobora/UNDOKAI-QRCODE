@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Database Setup Script for Lightera BUNDOKAI
+Database Setup Script for Lightera UNDOKAI
 Creates database tables and initial configuration
 """
 
@@ -127,7 +127,7 @@ def verify_database():
 
 def main():
     """Main setup function"""
-    logger.info("Starting Lightera BUNDOKAI database setup...")
+    logger.info("Starting Lightera UNDOKAI database setup...")
 
     # Setup database
     if not setup_database():

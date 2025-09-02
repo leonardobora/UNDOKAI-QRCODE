@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate Sample Data for Lightera BUNDOKAI
+Generate Sample Data for Lightera UNDOKAI
 Creates realistic test participants and dependents for development/testing
 """
 
@@ -326,9 +326,9 @@ def create_sample_emails(participants):
                     )
 
                     subject_map = {
-                        "qr_delivery": "BUNDOKAI 2024 - Seu QR Code de Acesso",
-                        "reminder": "BUNDOKAI 2024 - Lembrete do Evento",
-                        "confirmation": "BUNDOKAI 2024 - Confirmação de Inscrição",
+                        "qr_delivery": "UNDOKAI 2024 - Seu QR Code de Acesso",
+                        "reminder": "UNDOKAI 2024 - Lembrete do Evento",
+                        "confirmation": "UNDOKAI 2024 - Confirmação de Inscrição",
                     }
 
                     email_log = EmailLog(
@@ -372,7 +372,7 @@ def generate_statistics():
             }
 
             logger.info("\n" + "=" * 50)
-            logger.info("LIGHTERA BUNDOKAI - DATABASE STATISTICS")
+            logger.info("LIGHTERA UNDOKAI - DATABASE STATISTICS")
             logger.info("=" * 50)
             logger.info(f"👥 Participants: {stats['participants']}")
             logger.info(f"👶 Dependents: {stats['dependents']}")
@@ -397,7 +397,7 @@ def generate_statistics():
 
 def main():
     """Main data generation function"""
-    logger.info("Starting sample data generation for Lightera BUNDOKAI...")
+    logger.info("Starting sample data generation for Lightera UNDOKAI...")
 
     # Generate participant data
     logger.info("Generating participant data...")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Send QR Code Emails to Participants
-Batch email sending for BUNDOKAI event participants
+Batch email sending for UNDOKAI event participants
 """
 
 import os
@@ -114,14 +114,14 @@ def create_email_template(participant, qr_image_data):
     </head>
     <body>
         <div class="header">
-            <h1>🎉 BUNDOKAI 2024</h1>
+            <h1>🎉 UNDOKAI 2024</h1>
             <p>Seu QR Code de Acesso</p>
         </div>
         
         <div class="content">
             <h2>Olá, {participant.nome}! 👋</h2>
             
-            <p>Sua inscrição para o <strong>BUNDOKAI 2024</strong> foi confirmada com sucesso!</p>
+            <p>Sua inscrição para o <strong>UNDOKAI 2024</strong> foi confirmada com sucesso!</p>
             
             <div class="qr-container">
                 <h3>Seu QR Code de Acesso</h3>
@@ -170,7 +170,7 @@ def create_email_template(participant, qr_image_data):
         </div>
         
         <div class="footer">
-            <p>Este email foi enviado automaticamente pelo sistema Lightera BUNDOKAI.</p>
+            <p>Este email foi enviado automaticamente pelo sistema Lightera UNDOKAI.</p>
             <p>Em caso de dúvidas, entre em contato conosco.</p>
             <p>&copy; 2024 Lightera / Furukawa Electric - Todos os direitos reservados</p>
         </div>
@@ -206,7 +206,7 @@ def send_single_email(participant, dry_run=False):
         msg = MimeMultipart("related")
         msg["From"] = smtp_username
         msg["To"] = participant.email
-        msg["Subject"] = "BUNDOKAI 2024 - Seu QR Code de Acesso"
+        msg["Subject"] = "UNDOKAI 2024 - Seu QR Code de Acesso"
 
         # Create HTML body
         html_body = create_email_template(participant, qr_base64)
@@ -241,7 +241,7 @@ def send_single_email(participant, dry_run=False):
                 email_log = EmailLog(
                     participant_id=participant.id,
                     email_type="qr_delivery",
-                    subject="BUNDOKAI 2024 - Seu QR Code de Acesso",
+                    subject="UNDOKAI 2024 - Seu QR Code de Acesso",
                     status="failed",
                 )
                 db.session.add(email_log)
@@ -353,13 +353,13 @@ def send_reminder_emails(days_before=1, dry_run=False):
                 msg["From"] = smtp_username
                 msg["To"] = participant.email
                 msg["Subject"] = (
-                    f"BUNDOKAI 2024 - Lembrete: Evento em {days_before} dia(s)!"
+                    f"UNDOKAI 2024 - Lembrete: Evento em {days_before} dia(s)!"
                 )
 
                 body = f"""
                 Olá {participant.nome}!
                 
-                Este é um lembrete amigável sobre o BUNDOKAI 2024!
+                Este é um lembrete amigável sobre o UNDOKAI 2024!
                 
                 📅 O evento acontece em {days_before} dia(s)
                 🕐 Data: 15 de Dezembro de 2024
@@ -418,7 +418,7 @@ def send_reminder_emails(days_before=1, dry_run=False):
 def main():
     """Main email sending function"""
     parser = argparse.ArgumentParser(
-        description="Send QR Code emails to BUNDOKAI participants"
+        description="Send QR Code emails to UNDOKAI participants"
     )
     parser.add_argument(
         "--type",
@@ -453,7 +453,7 @@ def main():
 
     args = parser.parse_args()
 
-    logger.info("Starting BUNDOKAI email sending...")
+    logger.info("Starting UNDOKAI email sending...")
 
     # Validate email configuration
     if not args.dry_run and not validate_email_config():

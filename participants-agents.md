@@ -1,6 +1,6 @@
 # PARTICIPANTS AGENTS.md
 
-Gerenciamento de participantes, inscrições e dependentes para o evento BUNDOKAI.
+Gerenciamento de participantes, inscrições e dependentes para o evento UNDOKAI.
 
 ## participants-setup
 
