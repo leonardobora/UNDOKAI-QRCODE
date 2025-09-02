@@ -412,6 +412,7 @@ def manual_checkin():
 @app.route('/api/dashboard_stats')
 def dashboard_stats():
     """Real-time dashboard statistics"""
+    from models import Participant, CheckIn
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     pending_checkins = total_participants - total_checkins
@@ -440,6 +441,7 @@ def dashboard_stats():
 @app.route('/api/recent_checkins')
 def recent_checkins():
     """Get recent check-ins for dashboard refresh"""
+    from models import Participant, CheckIn
     recent = db.session.query(CheckIn, Participant)\
         .join(Participant)\
         .order_by(CheckIn.checkin_time.desc())\
