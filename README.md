@@ -4,7 +4,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-Sistema desenvolvido para substituir a solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para eventos corporativos da Furukawa Electric/Lightera, otimizado para até 2.500 participantes.
+Sistema desenvolvido com funcionalidades essenciais para eventos corporativos da Furukawa Electric/Lightera, otimizado para até 2.500 participantes.
 
 ## 🎯 Funcionalidades
 
@@ -370,7 +370,6 @@ chore: tarefas de manutenção
 
 **Desenvolvido por**: Leonardo Bora  
 **Objetivo**: Substituir soluções comerciais caras mantendo funcionalidades essenciais  
-**ROI**: Economia de R$ 5.427,00 por evento  
 
 ### Recursos Adicionais
 - [Documentação da API](docs/api.md)
