@@ -1,6 +1,6 @@
 # CHECKIN AGENTS.md
 
-Sistema de check-in para evento BUNDOKAI - scanner QR code, busca por nome e controle de acesso.
+Sistema de check-in para evento UNDOKAI - scanner QR code, busca por nome e controle de acesso.
 
 ## checkin-setup
 

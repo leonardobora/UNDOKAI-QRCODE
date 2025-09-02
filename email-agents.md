@@ -1,6 +1,6 @@
 # EMAIL AGENTS.md
 
-Sistema de campanhas de email para BUNDOKAI - QR codes, lembretes e notificações automáticas.
+Sistema de campanhas de email para UNDOKAI - QR codes, lembretes e notificações automáticas.
 
 ## email-setup
 

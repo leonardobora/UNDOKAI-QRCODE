@@ -287,7 +287,7 @@ class TestEmailLog:
             email_log = EmailLog(
                 participant_id=sample_participant.id,
                 email_type="qr_delivery",
-                subject="Seu QR Code para o evento BUNDOKAI",
+                subject="Seu QR Code para o evento UNDOKAI",
                 status="sent",
             )
             db.session.add(email_log)
@@ -298,7 +298,7 @@ class TestEmailLog:
             assert saved_log is not None
             assert saved_log.participant_id == sample_participant.id
             assert saved_log.email_type == "qr_delivery"
-            assert saved_log.subject == "Seu QR Code para o evento BUNDOKAI"
+            assert saved_log.subject == "Seu QR Code para o evento UNDOKAI"
             assert saved_log.status == "sent"
             assert saved_log.sent_at is not None
             assert saved_log.opened_at is None  # Not opened yet
@@ -382,7 +382,7 @@ class TestModelIntegration:
             qr_email = EmailLog(
                 participant_id=participant.id,
                 email_type="qr_delivery",
-                subject="Seu QR Code - BUNDOKAI 2024",
+                subject="Seu QR Code - UNDOKAI 2024",
                 status="sent",
             )
             db.session.add(qr_email)

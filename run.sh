@@ -1,7 +1,7 @@
 #!/bin/bash
-# Lightera BUNDOKAI - Quick Start Script
+# Lightera UNDOKAI - Quick Start Script
 
-echo "🚀 Iniciando Lightera BUNDOKAI System..."
+echo "🚀 Iniciando Lightera UNDOKAI System..."
 echo "   Sistema de Check-in e Controle de Entregas"
 echo "   Substitui Digitevent - Economia R$ 5.427,00/evento"
 echo ""
@@ -48,7 +48,7 @@ print_status "Python $PYTHON_VERSION encontrado"
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
     print_header "📦 Criando ambiente virtual..."
-    python3 -m venv venv --prompt="lightera-bundokai"
+    python3 -m venv venv --prompt="lightera-undokai"
     if [ $? -eq 0 ]; then
         print_status "Ambiente virtual criado com sucesso"
     else
@@ -167,7 +167,7 @@ fi
 
 # Display startup information
 echo ""
-print_header "🎯 Sistema Lightera BUNDOKAI - Pronto para uso!"
+print_header "🎯 Sistema Lightera UNDOKAI - Pronto para uso!"
 echo ""
 print_info "📱 URLs Principais:"
 echo "   • Homepage:        http://localhost:5000"
@@ -181,7 +181,7 @@ echo ""
 print_info "🔧 Comandos Úteis:"
 echo "   • Health Check:    curl http://localhost:5000/health"
 echo "   • Parar Servidor:  Ctrl+C"
-echo "   • Logs:            tail -f logs/bundokai.log"
+echo "   • Logs:            tail -f logs/undokai.log"
 echo ""
 print_info "📧 Configuração de Email:"
 echo "   • Configure SMTP no arquivo .env para envio de QR codes"

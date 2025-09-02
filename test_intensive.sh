@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Lightera BUNDOKAI - Intensive Testing Script
+# Lightera UNDOKAI - Intensive Testing Script
 # This script runs comprehensive tests to ensure the application is properly configured
 
 set -e  # Exit on any error
 
-echo "🚀 Lightera BUNDOKAI - Intensive Testing Suite"
+echo "🚀 Lightera UNDOKAI - Intensive Testing Suite"
 echo "=============================================="
 
 # Colors for output
@@ -185,7 +185,7 @@ else
     print_warning "💡 Common issues:"
     echo "   - Missing dependencies: pip install -e .[test,dev]"
     echo "   - Missing virtual environment: python -m venv venv && source venv/bin/activate"
-    echo "   - Database issues: rm bundokai.db && python -c 'from app import app, db; app.app_context().push(); db.create_all()'"
+    echo "   - Database issues: rm undokai.db && python -c 'from app import app, db; app.app_context().push(); db.create_all()'"
     echo ""
     exit 1
 fi

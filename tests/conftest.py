@@ -1,5 +1,5 @@
 """
-Test configuration and fixtures for Lightera BUNDOKAI system.
+Test configuration and fixtures for Lightera UNDOKAI system.
 """
 
 import os
@@ -153,7 +153,7 @@ def db_with_data(test_app):
         email_log = EmailLog(
             participant_id=participant.id,
             email_type="qr_delivery",
-            subject="Seu QR Code para o evento BUNDOKAI",
+            subject="Seu QR Code para o evento UNDOKAI",
             status="sent",
         )
         db.session.add(email_log)

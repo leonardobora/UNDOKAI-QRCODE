@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Quick health check script for Lightera BUNDOKAI
-echo "🏥 Lightera BUNDOKAI - Health Check"
+# Quick health check script for Lightera UNDOKAI
+echo "🏥 Lightera UNDOKAI - Health Check"
 echo "=================================="
 
 # Test core components
