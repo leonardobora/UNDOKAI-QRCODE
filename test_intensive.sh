@@ -156,7 +156,7 @@ echo "============================"
 mkdir -p static/qr_codes static/uploads logs reports static/checkin_cache
 
 total_tests=$((total_tests + 1))
-if run_test "Application startup" "timeout 10s python -c 'from app import app; print(\"Application can start\")' || echo 'Startup test completed'"; then
+if run_test "Application startup" "timeout 10s python -c 'from app import app; print(\"Application can start\")'"; then
     passed_tests=$((passed_tests + 1))
 fi
 
