@@ -3,6 +3,7 @@
 {% block title %}Dashboard - Lightera UNDOKAI{% endblock %}
 
 {% block extra_css %}
+<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
 <style>
     .stats-card {
         transition: transform 0.2s;
@@ -30,74 +31,358 @@
         0%, 50% { opacity: 1; }
         51%, 100% { opacity: 0.3; }
     }
+    
+    .new-checkin-row {
+        animation: highlightNew 3s ease-in-out;
+    }
+    
+    @keyframes highlightNew {
+        0% { background-color: rgba(40, 167, 69, 0.3); }
+        100% { background-color: transparent; }
+    }
+    
+    .pending-indicator {
+        animation: pendingPulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pendingPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Skip to main content for accessibility -->
+<a href="#main-content" class="sr-only-focusable">Pular para o conteúdo principal</a>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-chart-bar"></i> Dashboard - Tempo Real</h2>
     <div>
-        <span class="real-time-indicator"></span>
-        <small class="text-muted">Atualização automática</small>
-        <button class="btn btn-sm btn-outline-primary ms-2" onclick="refreshDashboard()">
-            <i class="fas fa-sync"></i> Atualizar
+        <h1 id="main-content"><i class="fas fa-chart-bar" aria-hidden="true"></i> Dashboard - Tempo Real</h1>
+        <p class="lead text-muted mb-0">Visão geral do evento UNDOKAI</p>
+    </div>
+    <div class="d-flex align-items-center">
+        <span class="real-time-indicator" aria-label="Indicador de tempo real"></span>
+        <small class="text-muted ms-2">Atualização automática a cada 30s</small>
+        <button class="btn btn-sm btn-outline-primary ms-3 focus-ring" onclick="refreshDashboard()" aria-label="Atualizar dados manualmente">
+            <i class="fas fa-sync" aria-hidden="true"></i> 
+            <span class="d-none d-md-inline">Atualizar</span>
         </button>
+        <a href="{{ url_for('admin_panel') }}" class="btn btn-sm btn-primary ms-2 focus-ring" 
+           aria-label="Abrir painel administrativo">
+            <i class="fas fa-cog" aria-hidden="true"></i>
+            <span class="d-none d-md-inline">Admin</span>
+        </a>
     </div>
 </div>
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white stats-card h-100">
+<!-- Statistics Cards with Enhanced Design -->
+<div class="row mb-4" role="region" aria-labelledby="stats-heading">
+    <div class="col-12">
+        <h2 id="stats-heading" class="sr-only">Estatísticas do Evento</h2>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stats-card-enhanced bg-primary text-white h-100" role="button" tabindex="0" 
+             onclick="focusSection('participants')" onkeypress="handleCardKeypress(event, 'participants')"
+             aria-label="Total de participantes inscritos">
             <div class="card-body text-center">
-                <i class="fas fa-users fa-3x mb-2"></i>
-                <h3 id="total-participants">{{ stats.total_participants }}</h3>
-                <p class="card-text">Total de Participantes</p>
+                <i class="fas fa-users stats-icon" aria-hidden="true"></i>
+                <div class="stats-value" id="total-participants" aria-live="polite">{{ stats.total_participants }}</div>
+                <p class="card-text mb-1">Total de Participantes</p>
                 <small class="text-light">Inscrições confirmadas</small>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card bg-success text-white stats-card h-100">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stats-card-enhanced bg-success text-white h-100" role="button" tabindex="0"
+             onclick="focusSection('checkins')" onkeypress="handleCardKeypress(event, 'checkins')"
+             aria-label="Total de check-ins realizados">
             <div class="card-body text-center">
-                <i class="fas fa-check-circle fa-3x mb-2"></i>
-                <h3 id="total-checkins">{{ stats.total_checkins }}</h3>
-                <p class="card-text">Check-ins Realizados</p>
+                <i class="fas fa-check-circle stats-icon" aria-hidden="true"></i>
+                <div class="stats-value" id="total-checkins" aria-live="polite">{{ stats.total_checkins }}</div>
+                <p class="card-text mb-1">Check-ins Realizados</p>
                 <small class="text-light">
-                    {{ "%.1f"|format((stats.total_checkins / stats.total_participants * 100) if stats.total_participants > 0 else 0) }}% do total
+                    <span id="attendance-percentage">{{ "%.1f"|format((stats.total_checkins / stats.total_participants * 100) if stats.total_participants > 0 else 0) }}%</span> do total
                 </small>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card bg-warning text-white stats-card h-100">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stats-card-enhanced bg-warning text-white h-100 pending-indicator" role="button" tabindex="0"
+             onclick="focusSection('pending')" onkeypress="handleCardKeypress(event, 'pending')"
+             aria-label="Participantes aguardando check-in">
             <div class="card-body text-center">
-                <i class="fas fa-clock fa-3x mb-2"></i>
-                <h3 id="pending-checkins">{{ stats.pending_checkins }}</h3>
-                <p class="card-text">Aguardando Check-in</p>
+                <i class="fas fa-clock stats-icon" aria-hidden="true"></i>
+                <div class="stats-value" id="pending-checkins" aria-live="polite">{{ stats.pending_checkins }}</div>
+                <p class="card-text mb-1">Aguardando Check-in</p>
                 <small class="text-light">Ainda não compareceram</small>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card bg-info text-white stats-card h-100">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stats-card-enhanced bg-info text-white h-100" role="button" tabindex="0"
+             onclick="focusSection('rate')" onkeypress="handleCardKeypress(event, 'rate')"
+             aria-label="Taxa de presença do evento">
             <div class="card-body text-center">
-                <i class="fas fa-percentage fa-3x mb-2"></i>
-                <h3 id="attendance-rate">
+                <i class="fas fa-percentage stats-icon" aria-hidden="true"></i>
+                <div class="stats-value" id="attendance-rate" aria-live="polite">
                     {{ "%.1f"|format((stats.total_checkins / stats.total_participants * 100) if stats.total_participants > 0 else 0) }}%
-                </h3>
-                <p class="card-text">Taxa de Presença</p>
+                </div>
+                <p class="card-text mb-1">Taxa de Presença</p>
                 <small class="text-light">Percentual de comparecimento</small>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Quick Actions Section -->
+<div class="quick-actions-grid mb-4" role="region" aria-labelledby="quick-actions-heading">
+    <h2 id="quick-actions-heading" class="sr-only">Ações Rápidas</h2>
+    
+    <div class="quick-action-card focus-ring" onclick="openScanner()" tabindex="0" 
+         onkeypress="handleCardKeypress(event, 'scanner')" role="button"
+         aria-label="Abrir scanner de QR Code">
+        <i class="fas fa-qrcode icon" aria-hidden="true"></i>
+        <span>Scanner QR</span>
+    </div>
+    
+    <div class="quick-action-card focus-ring" onclick="openSearch()" tabindex="0"
+         onkeypress="handleCardKeypress(event, 'search')" role="button"
+         aria-label="Buscar participante por nome">
+        <i class="fas fa-search icon" aria-hidden="true"></i>
+        <span>Buscar</span>
+    </div>
+    
+    <div class="quick-action-card focus-ring" onclick="exportData()" tabindex="0"
+         onkeypress="handleCardKeypress(event, 'export')" role="button"
+         aria-label="Exportar dados para Excel">
+        <i class="fas fa-file-excel icon" aria-hidden="true"></i>
+        <span>Exportar</span>
+    </div>
+    
+    <div class="quick-action-card focus-ring" onclick="sendReport()" tabindex="0"
+         onkeypress="handleCardKeypress(event, 'report')" role="button"
+         aria-label="Enviar relatório por email">
+        <i class="fas fa-envelope icon" aria-hidden="true"></i>
+        <span>Relatório</span>
+    </div>
+</div>
+
+<!-- Search Box for Mobile -->
+<div class="mobile-search-container d-md-none mb-4">
+    <input type="text" class="mobile-search-box" placeholder="🔍 Buscar participante..." 
+           id="mobile-search" aria-label="Campo de busca de participantes">
+    <div class="mt-2">
+        <small class="text-muted">Dica: Digite nome, email ou departamento</small>
+    </div>
+</div>
+
 <!-- Charts Row -->
-<div class="row mb-4">
+<div class="row mb-4" role="region" aria-labelledby="charts-heading">
+    <div class="col-12">
+        <h2 id="charts-heading" class="sr-only">Gráficos e Estatísticas</h2>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card enhanced-table">
+            <div class="card-header">
+                <h3 class="h6 mb-0"><i class="fas fa-chart-line" aria-hidden="true"></i> Check-ins por Horário (Hoje)</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="hourlyChart" aria-label="Gráfico de check-ins por horário"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card enhanced-table">
+            <div class="card-header">
+                <h3 class="h6 mb-0"><i class="fas fa-chart-pie" aria-hidden="true"></i> Status dos Participantes</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart" aria-label="Gráfico de status dos participantes"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Check-ins and System Status -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card enhanced-table" id="checkins">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h6 mb-0"><i class="fas fa-history" aria-hidden="true"></i> Check-ins Recentes</h3>
+                <button class="btn btn-sm btn-outline-primary focus-ring" onclick="refreshRecentCheckins()"
+                        aria-label="Atualizar lista de check-ins recentes">
+                    <i class="fas fa-sync" aria-hidden="true"></i>
+                    <span class="sr-only">Atualizar</span>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" role="table" aria-label="Lista de check-ins recentes">
+                        <thead>
+                            <tr role="row">
+                                <th scope="col">Horário</th>
+                                <th scope="col">Participante</th>
+                                <th scope="col">Departamento</th>
+                                <th scope="col" class="text-center">Dependentes</th>
+                                <th scope="col">Estação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-checkins-tbody">
+                            {% for checkin, participant in recent_checkins %}
+                            <tr role="row">
+                                <td>{{ checkin.checkin_time.strftime('%H:%M') }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ participant.nome }}</div>
+                                    <small class="text-muted">{{ participant.email }}</small>
+                                </td>
+                                <td>{{ participant.departamento or '-' }}</td>
+                                <td class="text-center">
+                                    {% if participant.dependents %}
+                                        <span class="enhanced-badge bg-info" aria-label="{{ participant.dependents|length }} dependentes">
+                                            {{ participant.dependents|length }}
+                                        </span>
+                                    {% else %}
+                                        <span aria-label="Nenhum dependente">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="enhanced-badge bg-secondary" aria-label="Estação {{ checkin.station }}">
+                                        {{ checkin.station }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not recent_checkins %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                    Nenhum check-in realizado ainda
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Enhanced Actions Panel -->
+        <div class="card enhanced-table mb-3">
+            <div class="card-header">
+                <h3 class="h6 mb-0"><i class="fas fa-bolt" aria-hidden="true"></i> Painel de Controle</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('scanner') }}" class="btn btn-primary touch-button focus-ring">
+                        <i class="fas fa-camera" aria-hidden="true"></i> Abrir Scanner
+                    </a>
+                    <a href="{{ url_for('checkin_search') }}" class="btn btn-warning touch-button focus-ring">
+                        <i class="fas fa-search" aria-hidden="true"></i> Buscar Participante
+                    </a>
+                    <button class="btn btn-info touch-button focus-ring" onclick="exportData()">
+                        <i class="fas fa-download" aria-hidden="true"></i> Exportar Dados
+                    </button>
+                    <button class="btn btn-success touch-button focus-ring" onclick="sendReport()">
+                        <i class="fas fa-envelope" aria-hidden="true"></i> Enviar Relatório
+                    </button>
+                    <a href="{{ url_for('admin_panel') }}" class="btn btn-dark touch-button focus-ring">
+                        <i class="fas fa-cog" aria-hidden="true"></i> Painel Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Status Panel -->
+        <div class="card enhanced-table">
+            <div class="card-header">
+                <h3 class="h6 mb-0"><i class="fas fa-server" aria-hidden="true"></i> Status do Sistema</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Conexão</span>
+                    <span class="enhanced-badge status-checked-in" id="connection-status" aria-live="polite">
+                        <i class="fas fa-wifi" aria-hidden="true"></i> Online
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Última Atualização</span>
+                    <small class="text-muted" id="last-update" aria-live="polite">Agora</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Auto-refresh</span>
+                    <span class="enhanced-badge status-checked-in">
+                        <i class="fas fa-check" aria-hidden="true"></i> Ativo
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Scanner</span>
+                    <span class="enhanced-badge status-checked-in">
+                        <i class="fas fa-camera" aria-hidden="true"></i> Pronto
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Keyboard Shortcuts Help -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
+    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#shortcutsModal"
+            aria-label="Ver atalhos de teclado">
+        <i class="fas fa-keyboard" aria-hidden="true"></i>
+        <span class="d-none d-md-inline">Atalhos</span>
+    </button>
+</div>
+
+<!-- Shortcuts Modal -->
+<div class="modal fade" id="shortcutsModal" tabindex="-1" aria-labelledby="shortcutsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shortcutsModalLabel">
+                    <i class="fas fa-keyboard" aria-hidden="true"></i> Atalhos de Teclado
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Navegação</h6>
+                        <ul class="list-unstyled">
+                            <li><kbd>Alt</kbd> + <kbd>S</kbd> Scanner</li>
+                            <li><kbd>Alt</kbd> + <kbd>B</kbd> Buscar</li>
+                            <li><kbd>Alt</kbd> + <kbd>D</kbd> Dashboard</li>
+                            <li><kbd>Alt</kbd> + <kbd>A</kbd> Admin</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Ações</h6>
+                        <ul class="list-unstyled">
+                            <li><kbd>Alt</kbd> + <kbd>E</kbd> Exportar</li>
+                            <li><kbd>Alt</kbd> + <kbd>R</kbd> Relatório</li>
+                            <li><kbd>F5</kbd> Atualizar</li>
+                            <li><kbd>Esc</kbd> Fechar modais</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
