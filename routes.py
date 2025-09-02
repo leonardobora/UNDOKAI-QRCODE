@@ -5,13 +5,13 @@ import qrcode
 import io
 import base64
 from app import app, db
-from models import Participant, Dependent, CheckIn, DeliveryItem, DeliveryLog, EmailLog
 from utils import generate_qr_code, send_qr_email
 from auth import login_required, check_admin_credentials, is_admin
 
 @app.route('/')
 def user_index():
     """User homepage with registration and QR lookup"""
+    from models import Participant, CheckIn
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     
@@ -24,6 +24,7 @@ def user_index():
 @login_required
 def admin_index():
     """Admin homepage with full system overview"""
+    from models import Participant, CheckIn, DeliveryItem
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     total_items = DeliveryItem.query.count()
@@ -40,6 +41,7 @@ def admin_index():
 @login_required
 def admin_panel():
     """Enhanced admin panel with bulk operations"""
+    from models import Participant, CheckIn
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     pending_checkins = total_participants - total_checkins
@@ -228,6 +230,7 @@ def checkin_search():
 @login_required
 def dashboard():
     """Real-time check-in dashboard"""
+    from models import Participant, CheckIn
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     pending_checkins = total_participants - total_checkins
