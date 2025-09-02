@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Lightera UNDOKAI{% endblock %}</title>
     
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Scanner QR Code para Check-in do Evento Lightera UNDOKAI">
+    <meta name="theme-color" content="#6f42c1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="UNDOKAI Scanner">
+    <meta name="msapplication-TileColor" content="#6f42c1">
+    <meta name="msapplication-TileImage" content="{{ url_for('static', filename='icons/icon-192x192.svg') }}">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.svg') }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192x192.svg') }}">
+    <link rel="apple-touch-icon" sizes="512x512" href="{{ url_for('static', filename='icons/icon-512x512.svg') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192x192.svg') }}">
+    <link rel="icon" type="image/svg+xml" sizes="512x512" href="{{ url_for('static', filename='icons/icon-512x512.svg') }}">
+    
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -81,6 +102,11 @@
                 </ul>
                 
                 <span class="navbar-text">
+                    <!-- Online/Offline Status Indicator -->
+                    <span id="connection-status" class="badge bg-success me-2" title="Status da conexão">
+                        <i class="fas fa-wifi"></i> Online
+                    </span>
+                    
                     {% if session.get('admin_logged_in') %}
                         <span class="badge bg-danger me-2">
                             <i class="fas fa-user-shield"></i> Admin: {{ session.get('admin_username') }}
@@ -142,6 +168,180 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- PWA and Service Worker Registration -->
+    <script>
+        // PWA Installation and Service Worker Registration
+        class PWAManager {
+            constructor() {
+                this.deferredPrompt = null;
+                this.init();
+            }
+
+            init() {
+                this.registerServiceWorker();
+                this.setupInstallPrompt();
+                this.setupConnectionStatus();
+            }
+
+            async registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const registration = await navigator.serviceWorker.register('/static/js/service-worker.js');
+                        console.log('Service Worker registered successfully:', registration.scope);
+                        
+                        // Listen for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    this.showUpdateAvailable();
+                                }
+                            });
+                        });
+                    } catch (error) {
+                        console.error('Service Worker registration failed:', error);
+                    }
+                }
+            }
+
+            setupInstallPrompt() {
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    this.deferredPrompt = e;
+                    this.showInstallButton();
+                });
+
+                window.addEventListener('appinstalled', () => {
+                    console.log('PWA was installed');
+                    this.hideInstallButton();
+                });
+            }
+
+            setupConnectionStatus() {
+                const statusElement = document.getElementById('connection-status');
+                
+                const updateConnectionStatus = () => {
+                    if (navigator.onLine) {
+                        statusElement.className = 'badge bg-success me-2';
+                        statusElement.innerHTML = '<i class="fas fa-wifi"></i> Online';
+                        statusElement.title = 'Conectado à internet';
+                    } else {
+                        statusElement.className = 'badge bg-warning me-2';
+                        statusElement.innerHTML = '<i class="fas fa-wifi-slash"></i> Offline';
+                        statusElement.title = 'Sem conexão - modo offline ativo';
+                    }
+                };
+
+                window.addEventListener('online', () => {
+                    updateConnectionStatus();
+                    this.showToast('Conexão restaurada', 'success');
+                    this.syncOfflineData();
+                });
+
+                window.addEventListener('offline', () => {
+                    updateConnectionStatus();
+                    this.showToast('Sem conexão - modo offline ativo', 'warning');
+                });
+
+                // Initial status
+                updateConnectionStatus();
+            }
+
+            showInstallButton() {
+                // Create install button if it doesn't exist
+                if (!document.getElementById('install-pwa-btn')) {
+                    const installBtn = document.createElement('button');
+                    installBtn.id = 'install-pwa-btn';
+                    installBtn.className = 'btn btn-sm btn-outline-light me-2';
+                    installBtn.innerHTML = '<i class="fas fa-download"></i> Instalar App';
+                    installBtn.onclick = () => this.installPWA();
+                    
+                    // Add to navbar
+                    const navbarText = document.querySelector('.navbar-text');
+                    navbarText.insertBefore(installBtn, navbarText.firstChild);
+                }
+            }
+
+            hideInstallButton() {
+                const installBtn = document.getElementById('install-pwa-btn');
+                if (installBtn) {
+                    installBtn.remove();
+                }
+            }
+
+            async installPWA() {
+                if (this.deferredPrompt) {
+                    this.deferredPrompt.prompt();
+                    const { outcome } = await this.deferredPrompt.userChoice;
+                    console.log('Install prompt outcome:', outcome);
+                    this.deferredPrompt = null;
+                    this.hideInstallButton();
+                }
+            }
+
+            showUpdateAvailable() {
+                this.showToast('Nova versão disponível. Recarregue a página para atualizar.', 'info', true);
+            }
+
+            syncOfflineData() {
+                if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        return registration.sync.register('offline-checkins');
+                    }).catch(error => {
+                        console.error('Background sync registration failed:', error);
+                    });
+                }
+            }
+
+            showToast(message, type = 'info', persistent = false) {
+                // Create toast container if it doesn't exist
+                let toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.id = 'toast-container';
+                    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                    toastContainer.style.zIndex = '9999';
+                    document.body.appendChild(toastContainer);
+                }
+
+                const toastId = 'toast-' + Date.now();
+                const toast = document.createElement('div');
+                toast.id = toastId;
+                toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} border-0`;
+                toast.setAttribute('role', 'alert');
+                
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+
+                toastContainer.appendChild(toast);
+
+                const bsToast = new bootstrap.Toast(toast, {
+                    autohide: !persistent,
+                    delay: persistent ? 0 : 5000
+                });
+                bsToast.show();
+
+                // Remove toast element after it's hidden
+                toast.addEventListener('hidden.bs.toast', () => {
+                    toast.remove();
+                });
+            }
+        }
+
+        // Initialize PWA Manager
+        document.addEventListener('DOMContentLoaded', () => {
+            window.pwaManager = new PWAManager();
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
