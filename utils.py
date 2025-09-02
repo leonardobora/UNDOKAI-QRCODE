@@ -37,7 +37,7 @@ def generate_qr_code(data, size=10, border=4):
 def send_qr_email(participant, qr_image_data=None):
     """Send QR code via email"""
     from app import app
-    
+
     try:
         smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
         smtp_port = int(os.environ.get("SMTP_PORT", "587"))

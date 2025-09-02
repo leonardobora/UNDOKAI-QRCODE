@@ -24,7 +24,7 @@ from utils import generate_qr_code, send_qr_email
 def user_index():
     """User homepage with registration and QR lookup"""
     from models import CheckIn, Participant
-    
+
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
 
@@ -42,7 +42,7 @@ def user_index():
 def admin_index():
     """Admin homepage with full system overview"""
     from models import CheckIn, DeliveryItem, Participant
-    
+
     total_participants = Participant.query.count()
     total_checkins = CheckIn.query.count()
     total_items = DeliveryItem.query.count()
