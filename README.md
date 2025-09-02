@@ -1,4 +1,4 @@
-# Lightera BUNDOKAI - Sistema de Check-in e Entregas
+# Lightera UNDOKAI - Sistema de Check-in e Entregas
 
 ![CI/CD Status](https://github.com/leonardobora/UNDOKAI-QRCODE/workflows/Lightera%20BUNDOKAI%20CI%2FCD/badge.svg)
 ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)
@@ -8,7 +8,7 @@ Sistema desenvolvido com funcionalidades essenciais para eventos corporativos da
 
 ## 🎯 Funcionalidades
 
-### ✅ Check-in de Evento (BUNDOKAI)
+### ✅ Check-in de Evento (UNDOKAI)
 - Inscrição online com nome + dependentes (até 5 por família)
 - Geração automática de QR Codes únicos
 - Scanner web para check-in via câmera do dispositivo
@@ -45,7 +45,7 @@ git clone https://github.com/leonardobora/UNDOKAI-QRCODE.git
 cd UNDOKAI-QRCODE
 
 # Crie um ambiente virtual
-python -m venv venv --prompt="lightera-bundokai"
+python -m venv venv --prompt="lightera-undokai"
 
 # Ative o ambiente virtual
 # Linux/Mac:
