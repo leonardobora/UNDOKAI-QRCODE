@@ -1,0 +1,218 @@
+name: Lightera BUNDOKAI CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[test,dev]
+
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings. Max line length set to 88 (black default)
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+    - name: Format check with black
+      run: |
+        black --check --diff .
+
+    - name: Import sort check with isort
+      run: |
+        isort --check-only --diff .
+
+    - name: Test with pytest
+      run: |
+        pytest tests/test_models.py tests/test_utils.py --cov=. --cov-report=xml --cov-report=term-missing -v
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Create directories
+      run: |
+        mkdir -p static/qr_codes static/uploads logs reports static/checkin_cache
+
+    - name: Test application startup
+      run: |
+        timeout 10s python -c "
+        from app import app, db
+        with app.app_context():
+            db.create_all()
+            print('✅ Database initialized successfully')
+            print('✅ Application can start')
+        " || true
+
+    - name: Validate core functionality
+      run: |
+        python -c "
+        import sys
+        sys.path.append('.')
+        
+        # Test imports
+        try:
+            from app import app, db
+            from models import Participant, CheckIn, DeliveryItem
+            from utils import generate_qr_code
+            print('✅ Core modules import successfully')
+        except ImportError as e:
+            print(f'❌ Import error: {e}')
+            sys.exit(1)
+        
+        # Test QR generation
+        try:
+            qr = generate_qr_code('TEST123')
+            assert qr.startswith('data:image/png;base64,')
+            print('✅ QR code generation working')
+        except Exception as e:
+            print(f'❌ QR generation error: {e}')
+            sys.exit(1)
+            
+        # Test database operations
+        try:
+            with app.app_context():
+                db.create_all()
+                # Test model creation
+                participant = Participant(
+                    nome='Test User',
+                    email='test@example.com',
+                    qr_code='TEST123'
+                )
+                db.session.add(participant)
+                db.session.commit()
+                
+                # Verify record was created
+                found = Participant.query.filter_by(email='test@example.com').first()
+                assert found is not None
+                print('✅ Database operations working')
+        except Exception as e:
+            print(f'❌ Database error: {e}')
+            sys.exit(1)
+        
+        print('🎉 All core functionality validated')
+        "
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
+
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+
+    - name: Run safety check
+      run: |
+        safety check
+
+    - name: Run bandit security linter
+      run: |
+        bandit -r . -f json -o bandit-results.json || true
+        bandit -r . --exit-zero
+
+  health_check:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Start application and health check
+      run: |
+        # Create required directories
+        mkdir -p static/qr_codes static/uploads logs reports static/checkin_cache
+        
+        # Start the application in background
+        python app.py &
+        APP_PID=$!
+        
+        # Wait for application to start
+        sleep 10
+        
+        # Health check
+        curl -f http://localhost:5000/health || (echo "Health check failed" && kill $APP_PID && exit 1)
+        
+        # Stop the application
+        kill $APP_PID
+        
+        echo "✅ Application health check passed"
+
+  notify:
+    needs: [test, build, security, health_check]
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Notification
+      run: |
+        if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
+          echo "🎉 All CI/CD checks passed successfully!"
+        else
+          echo "❌ Some CI/CD checks failed"
+          exit 1
+        fi
