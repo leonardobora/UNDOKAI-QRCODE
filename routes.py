@@ -627,6 +627,20 @@ def health():
         'database': 'connected'
     })
 
+@app.route('/service-worker.js')
+def service_worker():
+    """Serve the service worker with correct content type"""
+    from flask import send_from_directory
+    response = make_response(send_from_directory('static/js', 'service-worker.js'))
+    response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+@app.route('/scanner/public')
+def scanner_public():
+    """Public QR code scanner interface for testing PWA"""
+    return render_template('scanner.html')
+
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):

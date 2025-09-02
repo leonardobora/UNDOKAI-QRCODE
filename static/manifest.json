@@ -1,0 +1,61 @@
+{
+  "name": "UNDOKAI Scanner",
+  "short_name": "UNDOKAI Scanner",
+  "description": "Scanner QR Code para Check-in do Evento Lightera UNDOKAI",
+  "start_url": "/scanner",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6f42c1",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "pt-BR",
+  "shortcuts": [
+    {
+      "name": "Scanner QR",
+      "short_name": "Scanner",
+      "description": "Abrir scanner de QR Code",
+      "url": "/scanner",
+      "icons": [
+        {
+          "src": "/static/icons/icon-192x192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Buscar Nome",
+      "short_name": "Buscar",
+      "description": "Buscar participante por nome",
+      "url": "/checkin/search",
+      "icons": [
+        {
+          "src": "/static/icons/icon-192x192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/icons/screenshot-mobile.png",
+      "sizes": "320x640",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
