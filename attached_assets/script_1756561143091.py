@@ -1,11 +1,11 @@
-import zipfile
 import os
+import zipfile
 from datetime import datetime
 
 # Create the main project structure
 project_files = {
     # Main application files
-    'app.py': '''#!/usr/bin/env python3
+    "app.py": '''#!/usr/bin/env python3
 """
 Lightera BUNDOKAI - Sistema de Check-in e Controle de Entregas
 Substitui solução Digitevent (R$ 5.427,00) para eventos corporativos
@@ -191,8 +191,7 @@ if __name__ == '__main__':
         db.create_all()
     app.run(debug=True, host='0.0.0.0', port=5000)
 ''',
-
-    'requirements.txt': '''Flask==2.3.3
+    "requirements.txt": """Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
 qrcode[pil]==7.4.2
 pandas==2.1.1
@@ -200,9 +199,8 @@ gunicorn==21.2.0
 python-dotenv==1.0.0
 Pillow==10.0.1
 opencv-python-headless==4.8.1.78
-''',
-
-    '.env.example': '''SECRET_KEY=your-secret-key-here
+""",
+    ".env.example": """SECRET_KEY=your-secret-key-here
 DATABASE_URL=sqlite:///bundokai.db
 FLASK_ENV=development
 FLASK_DEBUG=True
@@ -217,9 +215,8 @@ SMTP_PASSWORD=your-app-password
 EVENT_NAME=BUNDOKAI 2024
 EVENT_DATE=2024-12-15
 QR_DELIVERY_DAYS=7
-''',
-
-    'Dockerfile': '''FROM python:3.9-slim
+""",
+    "Dockerfile": """FROM python:3.9-slim
 
 WORKDIR /app
 
@@ -231,9 +228,8 @@ COPY . .
 EXPOSE 5000
 
 CMD ["gunicorn", "--workers=4", "--bind=0.0.0.0:5000", "app:app"]
-''',
-
-    'README.md': '''# Lightera BUNDOKAI - Sistema de Check-in e Entregas
+""",
+    "README.md": """# Lightera BUNDOKAI - Sistema de Check-in e Entregas
 
 Sistema desenvolvido para substituir a solução Digitevent (R$ 5.427,00) com funcionalidades essenciais para eventos corporativos da Furukawa Electric/Lightera.
 
@@ -331,9 +327,8 @@ gunicorn --workers=4 --bind=0.0.0.0:5000 app:app
 ## Suporte
 
 Desenvolvido por Leonardo Bora para substituir soluções comerciais caras mantendo funcionalidades essenciais.
-''',
-
-    'run.sh': '''#!/bin/bash
+""",
+    "run.sh": """#!/bin/bash
 # Lightera BUNDOKAI - Quick Start Script
 
 echo "🚀 Iniciando Lightera BUNDOKAI System..."
@@ -374,12 +369,12 @@ echo "📱 Acesse: http://localhost:5000"
 echo "📊 Dashboard: http://localhost:5000/dashboard" 
 echo "📷 Scanner: http://localhost:5000/scanner"
 python app.py
-''',
+""",
 }
 
 # Create templates
 templates = {
-    'templates/base.html': '''<!DOCTYPE html>
+    "templates/base.html": """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -424,9 +419,8 @@ templates = {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}
 </body>
-</html>''',
-
-    'templates/index.html': '''{% extends "base.html" %}
+</html>""",
+    "templates/index.html": """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -491,9 +485,8 @@ templates = {
         </div>
     </div>
 </div>
-{% endblock %}''',
-
-    'templates/register.html': '''{% extends "base.html" %}
+{% endblock %}""",
+    "templates/register.html": """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -561,9 +554,8 @@ templates = {
         </div>
     </div>
 </div>
-{% endblock %}''',
-
-    'templates/scanner.html': '''{% extends "base.html" %}
+{% endblock %}""",
+    "templates/scanner.html": """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -693,9 +685,8 @@ function showError(message) {
     }, 3000);
 }
 </script>
-{% endblock %}''',
-
-    'templates/dashboard.html': '''{% extends "base.html" %}
+{% endblock %}""",
+    "templates/dashboard.html": """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -810,7 +801,7 @@ function showError(message) {
 // Auto-refresh dashboard every 30 seconds
 setTimeout(() => location.reload(), 30000);
 </script>
-{% endblock %}'''
+{% endblock %}""",
 }
 
 # Create all files
@@ -819,19 +810,19 @@ all_files = {**project_files, **templates}
 # Create zip file
 zip_filename = f"lightera-bundokai-mvp-{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
 
-with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
     for file_path, content in all_files.items():
         zipf.writestr(file_path, content)
-    
+
     # Add the AGENTS.md files (we'll reference them by their IDs)
     agents_files = [
-        ('main-agents.md', 'main-agents.md'),
-        ('participants-agents.md', 'participants-agents.md'), 
-        ('checkin-agents.md', 'checkin-agents.md'),
-        ('delivery-agents.md', 'delivery-agents.md'),
-        ('email-agents.md', 'email-agents.md')
+        ("main-agents.md", "main-agents.md"),
+        ("participants-agents.md", "participants-agents.md"),
+        ("checkin-agents.md", "checkin-agents.md"),
+        ("delivery-agents.md", "delivery-agents.md"),
+        ("email-agents.md", "email-agents.md"),
     ]
-    
+
     # Note: In real implementation, we'd add the actual AGENTS.md files content
     # For now, we'll create a placeholder structure
 
